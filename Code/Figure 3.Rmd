@@ -1,0 +1,889 @@
+---
+title: "Figure 3"
+output: pdf_document
+---
+
+```{r}
+library(here)
+library(tidyverse)
+library(reshape2)
+library(phyloseq)
+library(RColorBrewer)
+library(ggpubr)
+library(patchwork)
+library(dunn.test)
+library(multcompView)
+```
+
+# Load in relevant datasets
+## Phyloseq objects
+Load in the phyloseq object
+```{r}
+ps_master.foods <- readRDS(here("Data/20250929_master_trnL_ps_glommed_withPCs.rds"))
+ps_master.foods.clr <- readRDS(here("Data/20250929_master_trnL_ps_glommed_clr_withPCs.rds"))
+```
+
+## Process USDA Sheet
+
+```{r}
+# Read the original food dataset - links FNDDS foods to ingredients
+food_df <- read_csv(here("Data/fnddsIngredients_processed.csv")) %>% 
+  filter(`Acceptable List?` == "Yes") %>% 
+  select(-`Acceptable List?`, -Notes)
+
+# Read the mapping of species to ingredient CSV (from our earlier processing)
+mapping_df <- read_csv(here("Data/ingredient_species_mapping_processed_final.csv")) %>% 
+  select(-Notes)
+
+# Join the species mapping back to the original food dataset by matching
+# the original ingredient column ("SR description") to the mapping's "ingredient".
+joined_df <- food_df %>%
+  inner_join(mapping_df, by = c("SR description" = "ingredient"))
+
+# Make sure to remove any duplicated ingredient and food pairings
+joined_df <- joined_df %>%
+  distinct(Food_code, `SR description`, .keep_all = TRUE)
+
+# any ingredients not in a food anymore?
+mapping_df %>% filter(!(ingredient %in% joined_df$`SR description`)) 
+
+# any ingredients not covered anymore?
+joined_df %>% filter(!(`SR description` %in% mapping_df$ingredient)) 
+
+# everything is linked properly - no ingredients not accounted for on either side
+```
+
+# Analysis
+## Basic stats
+Calculate some basic stats on the FNDDS dataset
+```{r}
+# Total number of foods from FNDDS being analyzed
+joined_df$Food_code %>% n_distinct()
+
+# Total number of foods by category
+joined_df %>% group_by(novaclass) %>% summarize(numFoods = n_distinct(Food_code))
+
+numUPFs <- joined_df %>% group_by(novaclass) %>% summarize(numFoods = n_distinct(Food_code)) %>% filter(novaclass==4) %>% .$numFoods
+
+# number of unique ingredients
+joined_df$`SR description` %>% n_distinct()
+
+# breakdown by type
+mapping_df %>% group_by(source) %>% summarize(prevalence = n()/nrow(mapping_df)*100)
+
+# number of plant species covered
+joined_df2 <- joined_df %>% 
+  filter(source %in% c("mix", "plants"))
+# Remove square brackets and quotes
+joined_df2$species <- gsub("\\[|\\]|'", "", joined_df2$species)
+
+# Split species into a vector
+species_list <- unlist(strsplit(joined_df2$species, ", "))
+
+# Trim whitespace
+species_list <- trimws(species_list)
+
+# Get unique species
+unique_species <- unique(species_list)
+
+# Count the number of unique species
+num_unique_species <- length(unique_species)
+num_unique_species
+```
+
+
+
+## Figure 3A - Prevalent UPF species
+Prevalence of different plant species in UPFs (NOVA 4)
+```{r}
+# For this analysis we want to break up multiple species per ingredient.
+# Clean and separate the species column.
+joined_df_split <- joined_df %>%
+  mutate(species_clean = gsub("^\\[|\\]$", "", species),
+         species_clean = gsub("'", "", species_clean)) %>%
+  separate_rows(species_clean, sep = ",\\s*")
+
+# Filter for UPF (novaclass == 4) and only plant-derived ingredients
+# we also remove Saccharum officinarum due to 1) our inability to detect added sugar and 2) inconsistency in this ingredient being tracked in FNDDS
+upf_plantSpecies <- joined_df_split %>%
+  filter(novaclass == 4, source == "plants" | source == "mix", species_clean != "Saccharum officinarum", species_clean != "") 
+
+# remove duplicate combos of food and ingredient species
+upf_plantSpecies <- upf_plantSpecies %>%
+  distinct(Food_code, species_clean, .keep_all = TRUE)
+
+# find prevalence of different species in upfs
+prevalenceBySpecies <- upf_plantSpecies %>%
+  count(species_clean, sort = TRUE) %>% 
+  mutate(prevalence = n/(numUPFs))
+
+# View the ranked prevalence
+print(prevalenceBySpecies)
+```
+
+Plot the results
+```{r fig.height = 4, fig.width = 2.75}
+# Add in a rank
+prevalenceBySpecies <- prevalenceBySpecies %>% 
+  rownames_to_column(var = "rank")
+
+# Identify species in prevalenceBySpecies that are large contributors to PC2 signal
+pc2Loadings <- readRDS(here("Data/pc2Loadings.rds"))
+
+pc2LoadingsLarge <- pc2Loadings[abs(pc2Loadings)>0.7] # Large contributors to PC2
+
+pc2LoadingsLarge_speciesAndDirection <- data.frame(asv = names(pc2LoadingsLarge), 
+                                                   direction = sign(pc2LoadingsLarge),
+                                                   species = ps_master.foods.clr@tax_table[names(pc2LoadingsLarge), "correspondingTaxa"])
+
+pc2_species <- pc2LoadingsLarge_speciesAndDirection %>%
+  mutate(correspondingTaxa = strsplit(as.character(correspondingTaxa), ",\\s*")) %>%  # Split taxa into lists
+  unnest(correspondingTaxa) %>%  # Unnest to long format
+  mutate(species_clean = correspondingTaxa) %>%  # Match column name to prevalenceBySpecies
+  select(-correspondingTaxa)
+
+# Merge to identify PC2-linked species and pull out direction
+prevalenceBySpecies_PC2 <- prevalenceBySpecies %>%
+  inner_join(pc2_species, by = "species_clean")
+
+# Change labels so we only display the first 10 species for visualization purposes
+prevalenceBySpecies_PC2[1:10, "displayName"] <- T
+prevalenceBySpecies_PC2 <- prevalenceBySpecies_PC2 %>% 
+  mutate(species_clean = ifelse(displayName == T, species_clean, ""))
+
+# Update plot
+p <- ggplot(prevalenceBySpecies_PC2, 
+            aes(x = as.numeric(rank), y = prevalence * 100, color = factor(direction))) +
+  geom_point() +
+  theme_light() +
+  theme(legend.position = "none") +
+  labs(x = "Rank", y = "% of UPFs Taxa Present In", color = "Contribution to PC2") +
+  geom_label(aes(label = species_clean), fill = NA, label.size = 0) +
+  scale_y_continuous(limits = c(0, NA)) +
+  scale_x_continuous(breaks = scales::breaks_pretty(n = 5)) +
+  xlim(0,nrow(prevalenceBySpecies))
+
+# Save the updated plot
+ggsave(filename = here("Figures/Fig3A.pdf"),
+       dpi = 300, plot = p, height = 4, width = 2.75)
+
+# Print the plot
+p
+```
+
+
+## Species ORs for UPF identity
+### Single species
+```{r}
+# Function to clean and extract species names properly
+clean_species_list <- function(species_string) {
+  species_cleaned <- str_extract_all(species_string, "'([^']+ [^']+)'")[[1]]
+  species_cleaned <- str_replace_all(species_cleaned, "'", "")  # Remove quotes
+  
+  # Remove 'Saccharum officinarum' from the species list
+  species_cleaned <- species_cleaned[species_cleaned != "Saccharum officinarum"]
+  
+  return(species_cleaned)
+}
+
+# Convert species column into list format - only consider ingredients with a plant component, that are able to be linked to species
+food_df_withSpeciesList <- joined_df %>%
+  filter(source == "plants" | source == "mix", Status != "Exclude", species != "[]") %>%
+  mutate(species_list = map(species, clean_species_list)) %>%
+  filter(map_int(species_list, length) > 0) # Remove rows where species_list is empty
+
+food_df_withUniqueSpeciesList <- food_df_withSpeciesList %>%   
+  group_by(Food_code) %>%
+  summarise(species_list = list(unique(unlist(species_list))), novaclass = median(novaclass)) %>%
+  ungroup()
+
+# Build a model to see how presence of commonly processed species affects NOVA 4 likelihood
+# For each species, check if the food's species_list contains the species.
+# Merge this with NOVA class info (from food_species) to build a regression dataset.
+# Outcome: is_NOVA4, Predictor: has_species
+food_df_withUniqueSpeciesList <- food_df_withUniqueSpeciesList %>%
+  mutate(has_corn = map_lgl(species_list, ~ any(.x %in% "Zea mays")), has_soy = map_lgl(species_list, ~ any(.x %in% "Glycine max")), has_wheat = map_lgl(species_list, ~ any(.x %in% "Triticum aestivum"))) %>%
+  mutate(is_NOVA4 = if_else(novaclass == 4, 1, 0)) %>% 
+  select(Food_code, is_NOVA4, has_corn, has_soy, has_wheat)
+
+# Add back in foods which contain no plant ingredients
+noPlantFoods <- setdiff(unique(food_df$Food_code), food_df_withUniqueSpeciesList$Food_code)
+noPlantFoodsDf <- food_df %>% 
+  filter(Food_code %in% noPlantFoods) %>% 
+  group_by(Food_code) %>% 
+  summarize(novaclass = first(novaclass)) %>% 
+  mutate(is_NOVA4 = if_else(novaclass == 4, 1, 0),
+         has_corn = FALSE,
+         has_soy = FALSE, 
+         has_wheat = FALSE) %>% 
+  select(Food_code, is_NOVA4, has_corn, has_soy, has_wheat)
+
+food_df_withUniqueSpeciesList <- food_df_withUniqueSpeciesList %>% 
+    rbind(noPlantFoodsDf)
+
+# Logistic regression: is_NOVA4 ~ has_species
+model_corn <- glm(is_NOVA4 ~ has_corn, data = food_df_withUniqueSpeciesList, family = "binomial")
+model_soy <- glm(is_NOVA4 ~ has_soy, data = food_df_withUniqueSpeciesList, family = "binomial")
+model_wheat <- glm(is_NOVA4 ~ has_wheat, data = food_df_withUniqueSpeciesList, family = "binomial")
+
+summary_model_corn <- summary(model_corn)
+summary_model_soy <- summary(model_soy)
+summary_model_wheat <- summary(model_wheat)
+
+odds_ratio_corn <- exp(coef(model_corn)["has_cornTRUE"])
+odds_ratio_soy <- exp(coef(model_soy)["has_soyTRUE"])
+odds_ratio_wheat <- exp(coef(model_wheat)["has_wheatTRUE"])
+
+confint_corn <- exp(confint(model_corn))
+confint_soy <- exp(confint(model_soy))
+confint_wheat <- exp(confint(model_wheat))
+
+cat("Odds ratio for having corn (predicting NOVA 4):", odds_ratio_corn,"(", confint_corn["has_cornTRUE",1],",",  confint_corn["has_cornTRUE",2],")","\n")
+cat("Odds ratio for having soy (predicting NOVA 4):", odds_ratio_soy,"(", confint_soy["has_soyTRUE",1],",",  confint_soy["has_soyTRUE",2],")","\n")
+cat("Odds ratio for having wheat (predicting NOVA 4):", odds_ratio_wheat,"(", confint_wheat["has_wheatTRUE",1],",",  confint_wheat["has_wheatTRUE",2],")","\n")
+```
+### Pairs of species
+
+#### Data preparation
+```{r}
+# Helper function to get combinations (as comma-separated strings)
+get_combinations <- function(species, k) {
+  if(length(species) < k) return(character(0))
+  combs <- combn(sort(species), k, simplify = FALSE)
+  sapply(combs, function(x) paste(x, collapse = ", "))
+}
+
+food_df_withSpeciesList_nonComplex <- food_df_withSpeciesList %>% 
+  filter(Status != "Complex") 
+
+# Split up all complex ingredients
+food_df_withSpeciesList_splitComplexIngredients <- food_df_withSpeciesList %>%
+  filter(Status == "Complex") %>%
+  unnest(species_list) %>%
+  mutate(species_list = map(species_list, ~ .x[[1]])) %>%  # Flatten double lists to single layer
+  bind_rows(food_df_withSpeciesList_nonComplex)   
+
+food_df_withSpeciesList_splitComplexIngredients %>%
+  group_by(Main_food_description, novaclass) %>%
+  summarise(
+    # For each ingredient in the food, clean the species string.
+    ingredient_species = list(species_list),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    # Compute the Cartesian product (all possible species assignments for the food)
+    assignments = map(ingredient_species, function(spec_list) {
+      if(length(spec_list) == 1) {
+        # If only one ingredient, wrap its cleaned vector in a list.
+        return("TRUE")}else{
+          return("FALSE")
+        }}))
+
+# For each food, get a list of ingredients (each with possible species)
+food_assignments <- food_df_withSpeciesList_splitComplexIngredients %>%
+  group_by(Main_food_description, novaclass) %>%
+  summarise(
+    # For each ingredient in the food, clean the species string.
+    ingredient_species = list(species_list),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    # Compute the Cartesian product (all possible species assignments for the food)
+    assignments = map(ingredient_species, function(spec_list) {
+      if(length(spec_list) == 1) {
+        if(length(spec_list[[1]]) == 1){
+          # If only one ingredient, wrap its cleaned vector in a list.
+          return(list(spec_list[[1]]))
+        } else{ # handle case where we have a 1 ingredient food which can be multiple species
+          # simply choose the first species option so that no combinations are generated for that food
+          return(list(spec_list[[1]][1]))
+        }
+        
+      } else {
+        # Compute Cartesian product using expand.grid.
+        grid <- do.call(expand.grid, c(spec_list, stringsAsFactors = FALSE))
+        # Instead of using apply (which simplifies to a matrix), use map over row indices:
+        map(1:nrow(grid), function(i) sort(unique(as.character(unlist(grid[i, ])))))
+      }
+    }),
+    # For each food, from all possible assignments, compute the union of double combinations.
+    double_combos = map(assignments, function(assigns) {
+      combos <- unlist(lapply(assigns, function(a) {
+        get_combinations(a, 2)
+      }))
+      unique(combos)
+    })
+  )
+
+# Unnest double combinations and compute prevalence within each NOVA group.
+double_summary <- food_assignments %>%
+  select(Main_food_description, novaclass, double_combos) %>%
+  unnest(double_combos) %>%
+  group_by(novaclass, double_combos) %>%
+  summarise(food_count = n(), .groups = "drop") %>%
+  left_join(
+    food_assignments %>% group_by(novaclass) %>% summarise(total_foods = n(), .groups = "drop"),
+    by = "novaclass"
+  ) %>%
+  mutate(percentage = food_count / total_foods * 100)
+
+# For double combinations:
+double_summary_wide <- double_summary %>%
+  select(combo = double_combos, novaclass, percentage) %>%
+  pivot_wider(names_from = novaclass, 
+              values_from = percentage, 
+              names_prefix = "NOVA_") %>%
+  arrange(desc(NOVA_4))
+
+# Display the results:
+print("Double Combination Prevalence by NOVA Class:")
+print(double_summary_wide)
+```
+
+Gather counts of UPF and non-UPF foods in the dataset
+```{r}
+# Count foods by NOVA score
+totalFoodCountByNOVA <- food_df %>% 
+  group_by(Main_food_description) %>% 
+  summarize(novaclass= first(novaclass)) %>% 
+  group_by(novaclass) %>% 
+  summarise(total_foods = n(), .groups = "drop") 
+
+# Gather total food counts that are non-UPF and UPF 
+totalFoodCountNOVA123 <- totalFoodCountByNOVA %>% 
+  filter(novaclass != 4) %>% 
+  sum()
+
+totalFoodCountNOVA4 <- totalFoodCountByNOVA %>% 
+  filter(novaclass == 4) %>% 
+  .$total_foods
+```
+
+Compile data on the top combinations of species in UPFs - in terms of counts this time
+```{r fig.height = 4, fig.width=2.75}
+# Count the number of each pair of species by NOVA group
+pair_summary_count_wide <- double_summary %>%
+  select(combo = double_combos, novaclass, food_count) %>%
+  pivot_wider(names_from = novaclass, 
+              values_from = food_count, 
+              names_prefix = "NOVA_") %>% 
+  arrange(desc(NOVA_4)) 
+
+pair_summary_count_wide[is.na(pair_summary_count_wide)] <- 0
+
+# Prepare the top 3 double combos sorted by prevalence in NOVA 4
+top_3_doubles <- pair_summary_count_wide %>%
+  mutate(`NOVA 1, 2, 3` = (NOVA_1 + NOVA_2 + NOVA_3) / totalFoodCountNOVA123 * 100, NOVA_4 = NOVA_4 / totalFoodCountNOVA4 * 100) %>%
+  arrange(desc(NOVA_4)) %>%
+  slice_head(n = 3) %>%
+  select(combo, NOVA_4, `NOVA 1, 2, 3`) %>%
+  mutate(combo = factor(combo, levels = rev(unique(combo[order(NOVA_4)])))) %>%
+  pivot_longer(cols = c(NOVA_4, `NOVA 1, 2, 3`), names_to = "NOVA_Group", values_to = "Prevalence") %>% 
+  mutate(type = "single")
+
+
+# Get cumulative percentage of each group covered
+all_pairs <- unique(unlist(food_assignments$double_combos))
+
+combos_by_food <- food_assignments %>%
+  mutate(row_id = row_number()) %>%
+  unnest_wider(double_combos, names_sep = "_") %>%
+  pivot_longer(cols = starts_with("double_combos_"), values_drop_na = TRUE, names_to = NULL, values_to = "combo") %>%
+  mutate(value = 1) %>%
+  pivot_wider(names_from = combo, values_from = value, values_fill = 0) %>%
+  right_join(food_assignments %>% mutate(row_id = row_number()), by = "row_id") %>%
+  select(-row_id, -assignments.x, -ingredient_species.x) %>% 
+  mutate(covered = FALSE) %>% 
+  filter(!is.na(Main_food_description.x))
+
+# Initialize a result dataframe - calculating cumulative number of foods each top combo covers in order of prevalence
+combo_counts <- map_dfr(as.character(unique(top_3_doubles$combo)), function(combo) {
+  
+  # Identify rows that have this combo and haven't been covered yet
+  new_hits <- combos_by_food %>%
+    filter(.data[[combo]] == 1, !covered)
+
+  # Count NOVA classes in this new set
+  nova_counts <- new_hits %>%
+    count(novaclass.x, name = "count") %>%
+    tidyr::pivot_wider(names_from = novaclass.x, values_from = count, names_prefix = "NOVA_", values_fill = 0)
+  
+  # Add missing columns if necessary
+  for (col in c("NOVA_1", "NOVA_2", "NOVA_3", "NOVA_4")) {
+    if (!(col %in% colnames(nova_counts))) {
+      nova_counts[[col]] <- 0
+    }
+  }
+  
+  # Mark these rows as covered
+  combos_by_food <<- combos_by_food %>%
+    mutate(covered = if_else(Main_food_description.x %in% new_hits$Main_food_description.x, TRUE, covered))
+
+  # Return result with the combo
+  tibble(combo = combo) %>% bind_cols(nova_counts)
+})
+
+combo_counts_cumulative <- combo_counts %>% 
+  column_to_rownames(var = "combo") 
+combo_counts_cumulative[2,] <- combo_counts_cumulative[2,] + combo_counts_cumulative[1,]
+combo_counts_cumulative[3,] <- combo_counts_cumulative[3,] + combo_counts_cumulative[2,]
+
+cumulativeComboCounts <- combo_counts_cumulative %>% 
+  rownames_to_column(var = "combo") %>%
+  mutate(`NOVA 1, 2, 3` = NOVA_1 + NOVA_2 + NOVA_3) %>% 
+  select(`NOVA 1, 2, 3`, NOVA_4, combo) %>% 
+  mutate(type = "Cumulative", 
+         `NOVA 1, 2, 3` = `NOVA 1, 2, 3` / totalFoodCountNOVA123 * 100,
+         NOVA_4 = NOVA_4 / totalFoodCountNOVA4 * 100)%>% 
+  pivot_longer(cols = c(`NOVA 1, 2, 3`, NOVA_4), names_to = "NOVA_Group", values_to = "Prevalence") %>% 
+  mutate(NOVA_Group = paste0(NOVA_Group, "_", type)) 
+
+```
+
+#### Pair Odds Ratios
+Calculate odds ratios for each species combinations
+```{r}
+# Create model input of each food and whether or not they have one of the target combos of plant species
+modelInputData <- food_assignments %>% 
+  mutate(has_soy_wheat_combo = grepl("Glycine max, Triticum aestivum", double_combos),
+         has_corn_wheat_combo = grepl("Triticum aestivum, Zea mays", double_combos),
+         has_soy_corn_combo = grepl("Glycine max, Zea mays", double_combos), 
+         is_NOVA4 = case_when(novaclass == 4 ~ TRUE,
+                              TRUE ~ FALSE)) %>% 
+  select(Main_food_description, is_NOVA4, has_soy_wheat_combo, has_corn_wheat_combo, has_soy_corn_combo)
+
+# Add back in foods which contain no plant ingredients
+noPlantFoods <- setdiff(unique(food_df$Main_food_description), food_assignments$Main_food_description)
+noPlantFoodsDf <- food_df %>% 
+  filter(Main_food_description %in% noPlantFoods) %>% 
+  group_by(Main_food_description) %>% 
+  summarize(novaclass = first(novaclass)) %>% 
+  mutate(is_NOVA4 = case_when(novaclass == 4 ~ TRUE,
+                              TRUE ~ FALSE),
+         has_soy_wheat_combo = FALSE,
+         has_corn_wheat_combo = FALSE, 
+         has_soy_corn_combo = FALSE) %>% 
+  select(Main_food_description, is_NOVA4, has_soy_wheat_combo, has_corn_wheat_combo, has_soy_corn_combo)
+
+modelInputData <- modelInputData %>% 
+    rbind(noPlantFoodsDf)
+
+# Soy and wheat model
+model_1 <- glm(is_NOVA4 ~ has_soy_wheat_combo, data = modelInputData, family = "binomial")
+summary_model_1<- summary(model_1)
+odds_ratio_1 <- exp(coef(model_1)["has_soy_wheat_comboTRUE"])
+confint_1 <- exp(confint(model_1))
+cat("Odds ratio for having the target combination (predicting NOVA 4):", odds_ratio_1, "(", confint_1["has_soy_wheat_comboTRUE",1],",",  confint_1["has_soy_wheat_comboTRUE",2],")","\n")
+
+# Corn and wheat model
+model_2 <- glm(is_NOVA4 ~ has_corn_wheat_combo, data = modelInputData, family = "binomial")
+summary_model_2 <- summary(model_2)
+odds_ratio_2 <- exp(coef(model_2)["has_corn_wheat_comboTRUE"])
+confint_2 <- exp(confint(model_2))
+cat("Odds ratio for having the target combination (predicting NOVA 4):", odds_ratio_2, "(", confint_2["has_corn_wheat_comboTRUE",1],",",  confint_2["has_corn_wheat_comboTRUE",2],")","\n")
+
+# Soy and corn model
+model_3 <- glm(is_NOVA4 ~ has_soy_corn_combo, data = modelInputData, family = "binomial")
+summary_model_3<- summary(model_3)
+odds_ratio_3 <- exp(coef(model_3)["has_soy_corn_comboTRUE"])
+confint_3 <- exp(confint(model_3))
+cat("Odds ratio for having the target combination (predicting NOVA 4):", odds_ratio_3, "(", confint_3["has_soy_corn_comboTRUE",1],",",  confint_3["has_soy_corn_comboTRUE",2],")","\n")
+
+
+# Combine results across models to put into one dataframe for plotting
+oddsRatioDf <- data.frame(combo = c("Glycine max, Triticum aestivum", "Triticum aestivum, Zea mays", "Glycine max, Zea mays"),
+                          odds_ratio = c(odds_ratio_1, odds_ratio_2, odds_ratio_3), 
+                          lower_ci = c(confint_1[2,1], confint_2[2,1], confint_3[2,1]), 
+                          upper_ci = c(confint_1[2,2], confint_2[2,2], confint_3[2,2]))
+```
+
+#### Figure 3B - Odds ratios of species pairs in UPFs
+Plot the results
+```{r}
+# prepare the data objects for plotting
+cumulativeComboCounts_upfOnly <- cumulativeComboCounts %>% 
+  filter(NOVA_Group == "NOVA_4_Cumulative") %>% 
+  mutate(combo = factor(combo, levels = combo[order(Prevalence)]))
+
+oddsRatioDf <- oddsRatioDf  %>% 
+  mutate(combo = case_when(combo == "Glycine max, Triticum aestivum" ~ "Soy, Wheat",
+                           combo == "Triticum aestivum, Zea mays" ~ "Corn, Wheat",
+                           combo == "Glycine max, Zea mays" ~ "Corn, Soy")) %>% 
+  mutate(combo = factor(combo, levels = c("Soy, Wheat", "Corn, Wheat", "Corn, Soy")))
+
+# rename the species to their common names
+# no x labels on this one - combine with the odds ratio plot
+
+p_cumulative <- ggplot(select(cumulativeComboCounts_upfOnly,-type), aes(y = Prevalence, x = combo, color = NOVA_Group)) +
+  geom_line(aes(group = NOVA_Group), color = "black") +
+  geom_point(size = 3) + 
+  theme_light() +
+  theme(axis.text.x = element_blank(), legend.position = "none", axis.ticks.x = element_blank()) +
+  labs(
+    y = "Cumulative % of\nUPFs Present In",
+    x = "",
+  ) +
+  scale_color_manual(values = c("NOVA_4_Cumulative" = "red")) +
+  ylim(0,50)
+
+p_odds_ratios <- ggplot(oddsRatioDf, aes(x = combo, y = odds_ratio)) +
+  geom_point(size = 3, alpha = 1, color = "red", shape = 18) +
+  labs(y = "Odds Ratio for\nUPF Classification", x = "Species Combination") +
+  theme_light() +
+  ylim(0,100) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "black") + 
+  geom_text(aes(x = 1, y = 10, label = "Odds Ratio = 1"), color = "black", size = 4) 
+
+
+p_cumulative / p_odds_ratios
+ggsave(filename = here("Figures/Figure3B.pdf"), dpi = 300, plot = p_cumulative / p_odds_ratios, width = 3, height = 4)
+
+```
+
+#### Extended Data Figure 2 - Odds ratios of species pairs in UPFs with confidence intervals
+
+Include version of the odds ratio plot with error bars.
+```{r fig.width = 3, fig.height = 4}
+p <- ggplot(oddsRatioDf, aes(x = combo, y = odds_ratio)) +
+  geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci), width = 0.2, color = "black") +
+  geom_point(size = 3, alpha = 1, color = "red", shape = 18) +
+  labs(y = "Odds Ratio for\nUPF Classification", x = "Species Combination") +
+  theme_light() +
+  ylim(0,400) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "black") + 
+  #label y =1
+  geom_text(aes(x = 1, y = 10, label = "Odds Ratio = 1"), color = "black", size = 2) 
+p
+
+ggsave(filename = here("Figures/ExtendedDataFigure2.pdf"), dpi = 300, plot = p, width = 2.7, height = 2.95)
+```
+
+
+## Figure 3C - Relationship between diet quality and PCs
+```{r fig.height = 4, fig.width=2.75}
+chompONRData <- data.frame(ps_master.foods.clr@sam_data) %>% 
+  filter(study %in% c("Durham Adult 1", "Durham Adult 2")) %>% 
+  select(PC1, PC2, subj, study, hei_plant_all, hei_non_plant, Total.HEI.2015.Score) 
+
+# calculate mean by subj since we just have one FFQ index per subject
+chompONRData <- chompONRData %>%
+  group_by(subj, hei_plant_all, hei_non_plant, Total.HEI.2015.Score) %>%
+  summarise(
+    PC1 = mean(PC1, na.rm = TRUE),
+    PC2 = mean(PC2, na.rm = TRUE)
+  )
+
+chompONRData <- chompONRData %>% 
+  select(hei_plant_all, hei_non_plant, Total.HEI.2015.Score, subj, PC1, PC2) %>% 
+  filter(!is.na(hei_plant_all)) %>% 
+  data.frame() %>% 
+  melt(id.vars=c("subj", "PC1", "PC2")) %>% 
+  mutate(variable = as.character(variable), variable = case_when(variable == "hei_plant_all" ~ "HEI-2015 (plant component)",
+                              variable == "Total.HEI.2015.Score" ~ "HEI-2015 Total",
+                              variable == "hei_non_plant" ~ "HEI-2015 (non-plant component)",
+                              TRUE ~ variable))
+  
+chompONRData$variable <- factor(chompONRData$variable, levels = c("HEI-2015 Total", "HEI-2015 (plant component)", "HEI-2015 (non-plant component)"))
+
+
+ggplot(chompONRData, aes(x = PC1, y = value, color = variable)) +
+  facet_wrap(~variable, scales = "free_y", ncol = 1) +
+  geom_point(alpha = 0.5) +
+  stat_cor( method = "spearman", color = "black") +
+  geom_smooth(method= "lm") +
+  theme(legend.position = "none")
+
+p <- ggplot(chompONRData, aes(x = PC2, y = value, color = variable)) +
+  facet_wrap(~variable, scales = "free_y", ncol = 1) +
+  geom_point(alpha = 0.5) +
+  stat_cor( method = "spearman", color = "black") +
+  geom_smooth(method= "lm") +
+  theme_minimal() + 
+  theme(legend.position = "none", axis.title.x = element_text(face = "bold"), axis.title.y = element_text(face = "bold")) +
+  labs(y = "Value")
+p
+
+
+ggsave(file = here("Figures/Fig3C.pdf"), plot = p, dpi = 300, width = 2.75, height = 4)
+
+
+```
+
+
+
+## Plant richness vs. Processing Level
+
+## Species richness vs. processing level
+### Data setup
+Count the number of species present in each food in the dataset
+For complex ingredients - we break out all of the species
+For ingredients with multiple species options (e.g. vegetable oil) - we only count this as an additional species when none of the species options are already covered in the food
+```{r}
+# Function to count unique plant species per food item
+count_species_per_food <- function(food_df) {
+  counted_species <- c()  # To store species that have been counted
+  species_count <- 0       # Counter for unique species per food
+
+  # Process simple ingredients first (not complex + only one species linked to the ingredient)
+  simple_ingredients <- food_df %>% filter(Status != "Complex", map_int(species_list, length) == 1)
+
+  if(nrow(simple_ingredients) > 0){
+    for (i in 1:nrow(simple_ingredients)) {
+      species <- simple_ingredients$species_list[[i]]
+      new_species <- setdiff(species, counted_species)  # Only count new species
+      if (length(new_species) > 0) {
+        species_count <- species_count + 1
+        counted_species <- union(counted_species, species)
+      }
+    }
+  }
+  
+  # Process complex ingredients (they add all species directly)
+  complex_ingredients <- food_df %>% filter(Status == "Complex")
+  if(nrow(complex_ingredients) > 0){
+    for (i in 1:nrow(complex_ingredients)) {
+      species <- complex_ingredients$species_list[[i]]
+      new_species <- setdiff(species, counted_species)
+      species_count <- species_count + length(new_species)  # Add all unique species
+      counted_species <- union(counted_species, species)
+    }
+  }
+
+  # Process non-complex multi-species ingredients
+  # To be conservative here, we assume that if any of the possible species of an ingredient are counted then that ingredient is covered and we don't increase the species count
+  # E.g. if we have accounted for soy via soy protein, then add in vegetable oil (soy, canola, etc.) we will not increase the species count as soy is already covered.
+  multi_species_simple <- food_df %>% filter(Status != "Complex", map_int(species_list, length) > 1)
+
+  if(nrow(multi_species_simple) > 0){
+    for (i in 1:nrow(multi_species_simple)) {
+      species <- multi_species_simple$species_list[[i]]
+      if (length(intersect(species, counted_species)) == 0) {  # If no species are already counted
+        species_count <- species_count + 1
+        counted_species <- union(counted_species, species)
+      }
+    }
+  }
+
+  return(species_count)
+}
+
+# Apply function to each food group
+species_counts <- food_df_withSpeciesList %>% 
+  group_by(Food_code) %>%
+  summarise(Unique_Species_Count = count_species_per_food(cur_data()))
+
+novaScores <- food_df %>% 
+  group_by(Food_code) %>% 
+  summarize(novaclass = first(novaclass)) %>% # all nova scores are the same within a given food so just using first to simplify
+  select(novaclass, Food_code)
+
+species_counts <- species_counts %>% 
+  left_join(novaScores, by = "Food_code")
+
+# add back in all foods which have 0 plant species
+excludedFoods <- novaScores %>% 
+  filter(!(Food_code %in% species_counts$Food_code)) %>% 
+  mutate(Unique_Species_Count = 0)
+
+species_counts <- species_counts %>% 
+  rbind(excludedFoods)
+```
+
+### Stats
+
+Impact of each additional plant ingredient on NOVA 4 likelihood
+```{r}
+# Setup model input data frame
+modelDf <- species_counts %>% 
+  mutate(is_NOVA4 = if_else(novaclass == 4, 1, 0))
+
+# Logistic regression: is_NOVA4 ~ plant_count
+model_count <- glm(is_NOVA4 ~ Unique_Species_Count, data = modelDf, family = "binomial")
+summary_model_count <- summary(model_count)
+odds_ratio_count <- exp(coef(model_count)["Unique_Species_Count"])
+confint_count <- exp(confint(model_count))
+
+cat("Odds ratio for each additional plant species (predicting NOVA 4):",  odds_ratio_count, "(", confint_count["Unique_Species_Count",1],",",  confint_count["Unique_Species_Count",2],")", "\n")
+```
+
+
+Run statistical test to figure out if there are differences by NOVA score
+```{r}
+# test for normality - all sig so reject null 
+ks.test(filter(species_counts, novaclass == 1)$Unique_Species_Count, "pnorm")
+ks.test(filter(species_counts, novaclass == 2)$Unique_Species_Count, "pnorm")
+ks.test(filter(species_counts, novaclass == 3)$Unique_Species_Count, "pnorm")
+ks.test(filter(species_counts, novaclass == 4)$Unique_Species_Count, "pnorm")
+
+
+# First we test if there is a significant difference by NOVA class using Kruskal Wallis H test
+kruskal_result <- kruskal.test(Unique_Species_Count ~ novaclass, data = species_counts)
+print(kruskal_result)
+
+# Specific test for UPFs vs. minimally processed foods:
+wilcox.test(filter(species_counts, novaclass == 3)$Unique_Species_Count, filter(species_counts, novaclass == 4)$Unique_Species_Count)
+
+# significant, therefore we perform Dunn's Test to evaluate which pairs of NOVA classes have sig. differences
+dunn_result <- dunn.test(species_counts$Unique_Species_Count, species_counts$novaclass, method="bh")
+print(dunn_result)
+```
+
+### Figure 3D - Plant species richness vs. processing level
+```{r fig.width = 2.75, fig.height = 4}
+# Generate the letters for compact letter display to display which nova scores are statistically different from one another 
+Diff <- dunn_result$P.adjusted < 0.05
+Names <- gsub(" ", "", dunn_result$comparisons)
+names(Diff) <-  Names
+CLD <- multcompLetters(Diff)
+annotations <- data.frame(annotation = CLD$Letters) %>% 
+  rownames_to_column(var = "novaclass") %>% 
+  mutate(novaclass = as.numeric(novaclass))
+
+
+p <- ggplot(species_counts, 
+            aes(x = factor(novaclass), 
+                y = Unique_Species_Count, 
+                fill = factor(novaclass))) +
+  geom_boxplot() +
+  geom_jitter(alpha = 0.3, size = 0.5, height = .1) +
+  theme_light() +
+  theme(legend.position = "none", axis.title.x = element_text(face = "bold"), axis.title.y = element_text(face = "bold")) +
+  labs(x = "NOVA Score", y = "Number of Plant Species") +
+  geom_text(data = annotations, aes(x = factor(novaclass), y = 15, label = annotation), inherit.aes = FALSE, size = 7) 
+
+p
+ggsave(filename = here("Figures/Figure3D.pdf"), dpi = 300, plot = p, height = 4, width = 2.75)
+```
+
+## Ingredient richness vs. processing level
+### Data setup
+```{r}
+ingredient_counts <- joined_df %>% 
+  group_by(Main_food_description) %>% 
+  summarise(unique_ingredient_count = n_distinct(`SR description`), novaclass = first(novaclass)) 
+
+ingredient_counts_plants <- joined_df %>% 
+  group_by(Main_food_description) %>% 
+  summarize(unique_ingredient_count = sum(source %in% c("plants", "mix")), novaclass = first(novaclass))
+  
+```
+
+
+### Stats
+Impact of additional ingredients on NOVA 4 likelihood
+```{r}
+modelDf <- ingredient_counts %>% 
+  mutate(is_NOVA4 = if_else(novaclass == 4, 1, 0))
+
+# Logistic regression: is_NOVA4 ~ ingredient_count
+model_count <- glm(is_NOVA4 ~ unique_ingredient_count, data = modelDf, family = "binomial")
+summary_model_count <- summary(model_count)
+odds_ratio_count <- exp(coef(model_count)["unique_ingredient_count"])
+confint_count <- exp(confint(model_count))
+
+cat("Odds ratio for each additional ingredient (predicting NOVA 4):",  odds_ratio_count, "(", confint_count["unique_ingredient_count",1],",",  confint_count["unique_ingredient_count",2],")", "\n")
+```
+
+Run model with only plant ingredients
+```{r}
+modelDf <- ingredient_counts_plants %>% 
+  mutate(is_NOVA4 = if_else(novaclass == 4, 1, 0))
+
+# Logistic regression: is_NOVA4 ~ plant_ingredient_count
+model_count <- glm(is_NOVA4 ~ unique_ingredient_count, data = modelDf, family = "binomial")
+summary_model_count <- summary(model_count)
+odds_ratio_count <- exp(coef(model_count)["unique_ingredient_count"])
+confint_count <- exp(confint(model_count))
+
+cat("Odds ratio for each additional plant ingredient (predicting NOVA 4):",  odds_ratio_count, "(", confint_count["unique_ingredient_count",1],",",  confint_count["unique_ingredient_count",2],")", "\n")
+```
+
+
+Run statistical test to figure out if there are differences by NOVA score
+
+Stats for ingredient counts
+```{r}
+# test for normality - all sig so reject null 
+ks.test(filter(ingredient_counts, novaclass == 1)$unique_ingredient_count, "pnorm")
+ks.test(filter(ingredient_counts, novaclass == 2)$unique_ingredient_count, "pnorm")
+ks.test(filter(ingredient_counts, novaclass == 3)$unique_ingredient_count, "pnorm")
+ks.test(filter(ingredient_counts, novaclass == 4)$unique_ingredient_count, "pnorm")
+
+# First we test if there is a significant difference by NOVA class using Kruskal Wallis H test
+kruskal_result <- kruskal.test(unique_ingredient_count ~ novaclass, data = ingredient_counts)
+print(kruskal_result)
+
+# significant, therefore we perform Dunn's Test to evaluate which pairs of NOVA classes have sig. differences
+dunn_result_ingredients <- dunn.test(ingredient_counts$unique_ingredient_count, ingredient_counts$novaclass, method="bh")
+print(dunn_result_ingredients)
+```
+Stats for plant ingredient counts
+```{r}
+# test for normality - all sig so reject null 
+ks.test(filter(ingredient_counts_plants, novaclass == 1)$unique_ingredient_count, "pnorm")
+ks.test(filter(ingredient_counts_plants, novaclass == 2)$unique_ingredient_count, "pnorm")
+ks.test(filter(ingredient_counts_plants, novaclass == 3)$unique_ingredient_count, "pnorm")
+ks.test(filter(ingredient_counts_plants, novaclass == 4)$unique_ingredient_count, "pnorm")
+
+
+# First we test if there is a significant difference by NOVA class using Kruskal Wallis H test
+kruskal_result <- kruskal.test(unique_ingredient_count ~ novaclass, data = ingredient_counts_plants)
+print(kruskal_result)
+
+# significant, therefore we perform Dunn's Test to evaluate which pairs of NOVA classes have sig. differences
+dunn_result_plant_ingredients <- dunn.test(ingredient_counts_plants$unique_ingredient_count, ingredient_counts_plants$novaclass, method="bh")
+print(dunn_result_plant_ingredients)
+```
+### Extended Data Figure 3 - Ingredient richness vs. processing level
+
+Visualize relationship between number of ingredients and NOVA score
+```{r fig.width = 2.75, fig.height = 4}
+# Generate the letters for compact letter display to display which nova scores are statistically different from one another 
+Diff <- dunn_result_ingredients$P.adjusted < 0.05
+Names <- gsub(" ", "", dunn_result_ingredients$comparisons)
+names(Diff) <-  Names
+CLD <- multcompLetters(Diff)
+annotations <- data.frame(annotation = CLD$Letters) %>% 
+  rownames_to_column(var = "novaclass") %>% 
+  mutate(novaclass = as.numeric(novaclass))
+
+p <- ggplot(ingredient_counts, aes(x = factor(novaclass), y = unique_ingredient_count, fill = factor(novaclass))) +
+  geom_boxplot() +
+  theme_light() +
+  theme(legend.position = "none", axis.title.x = element_text(face = "bold"), axis.title.y = element_text(face = "bold")) +
+  labs(x = "NOVA Score", y = "Number of Ingredients") + 
+  geom_jitter(alpha = 0.3, size = 0.5, height = 0.1) +
+  ylim(0,30) + 
+  geom_text(data = annotations, aes(x = factor(novaclass), y = 30, label = annotation), inherit.aes = FALSE, size = 7) 
+
+
+p
+ggsave(filename = here("Figures/ExtendedDataFigure3A.pdf"), dpi = 300, plot = p, height = 4, width = 2.75)
+```
+
+Visualize relationship between number of plant ingredients and NOVA score
+```{r fig.width = 2.75, fig.height = 4}
+# Generate the letters for compact letter display to display which nova scores are statistically different from one another 
+Diff <- dunn_result_plant_ingredients$P.adjusted < 0.05
+Names <- gsub(" ", "", dunn_result_plant_ingredients$comparisons)
+names(Diff) <-  Names
+CLD <- multcompLetters(Diff)
+annotations <- data.frame(annotation = CLD$Letters) %>% 
+  rownames_to_column(var = "novaclass") %>% 
+  mutate(novaclass = as.numeric(novaclass))
+
+
+p <- ggplot(ingredient_counts_plants, aes(x = factor(novaclass), y = unique_ingredient_count, fill = factor(novaclass))) +
+  geom_boxplot() +
+  theme_light() +
+  theme(legend.position = "none", axis.title.x = element_text(face = "bold"), axis.title.y = element_text(face = "bold")) +
+  labs(x = "NOVA Score", y = "Number of Plant Ingredients") + 
+  geom_jitter(alpha = 0.3, size = 0.5, height = 0.1) +
+  ylim(0,30) + 
+  geom_text(data = annotations, aes(x = factor(novaclass), y = 30, label = annotation), inherit.aes = FALSE, size = 7) 
+
+p
+ggsave(filename = here("Figures/ExtendedDataFigure3B.pdf"), dpi = 300, plot = p, height = 4, width = 2.75)
+```

@@ -1,0 +1,80 @@
+---
+title: "phyloseqPreprocessing"
+output: html_document
+date: "2025-10-07"
+---
+
+```{r}
+library(tidyverse)
+library(microbiome)
+library(phyloseq)
+library(here)
+```
+
+Read in phyloseq
+```{r}
+ps_master <- readRDS(here("Data/20250929_master_trnL_ps_glommed_unprocessed.rds"))
+```
+
+
+
+Pre process the objects
+```{r}
+# Update read counts in phyloseq object for trnL
+sample_data(ps_master)$reads <- sample_sums(ps_master)
+
+# make a foods only object - exclude OTUs that are not linked to a kingdom
+ps_master.foods <- ps_master %>% 
+  subset_taxa(., !is.na(superkingdom)) %>% 
+  prune_taxa(taxa_sums(.) > 0, .)
+
+# add pMR to the dataset
+pMR <- ifelse(ps_master.foods@otu_table>0,1,0) %>% 
+  rowSums()
+ps_master.foods@sam_data$pMR <- pMR
+
+# Determine which samples have zero food reads, these will be removed from the CLR object
+ps_master.ZeroFoodReads.sampleIDs <- ps_master %>% 
+  subset_taxa(., !is.na(superkingdom)) %>% 
+  prune_samples(sample_sums(.) == 0, .) %>% 
+  sample_data() %>% 
+  .$sampleID
+
+# Form CLR object with all of the reads then filter
+ps_master.foods.clr <- ps_master %>% 
+  prune_samples(sample_sums(.) > 0, .) %>%
+  prune_taxa(taxa_sums(.) > 0, .) %>% 
+  microbiome::transform(.,'clr') %>% 
+  subset_taxa(., !is.na(superkingdom)) %>% 
+  subset_samples(!(sampleID %in% ps_master.ZeroFoodReads.sampleIDs)) # remove samples with zero food reads
+
+
+samdf <- sample_data(ps_master.foods.clr) %>% 
+  data.frame() %>% 
+  rownames_to_column() %>% 
+  left_join(rownames_to_column(data.frame(pMR))) %>% 
+  column_to_rownames() %>% 
+  sample_data()
+sample_data(ps_master.foods.clr) <- samdf
+
+
+ps_master.foods.filtered <- ps_master.foods %>% 
+  subset_samples(!(sampleID %in% ps_master.ZeroFoodReads.sampleIDs)) # remove samples with zero food reads
+
+# Form RA object with all of the reads then filter
+ps_master.foods.ra <- ps_master %>% 
+  prune_samples(sample_sums(.) > 0, .) %>%
+  prune_taxa(taxa_sums(.) > 0, .) %>% 
+  microbiome::transform(.,'compositional') %>% 
+  subset_taxa(., !is.na(superkingdom)) %>% 
+  subset_samples(!(sampleID %in% ps_master.ZeroFoodReads.sampleIDs)) # remove samples with zero food reads
+
+```
+
+
+Save the objects
+```{r}
+saveRDS(ps_master.foods.filtered, here("Data/20250929_master_trnL_ps_glommed.rds"))
+saveRDS(ps_master.foods.ra, here("Data/20250929_master_trnL_ps_glommed_ra.rds"))
+saveRDS(ps_master.foods.clr, here("Data/20250929_master_trnL_ps_glommed_clr.rds"))
+```

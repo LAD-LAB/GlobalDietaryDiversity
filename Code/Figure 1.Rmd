@@ -1,0 +1,579 @@
+---
+title: "Figure 1"
+output: pdf_document
+---
+
+# Setup
+
+```{r, include=FALSE, echo=FALSE}
+library(multcompView)
+library(Biostrings)
+library(ggtree)
+library(tidyverse)
+library(here)
+library(reshape)
+library(phyloseq)
+library(dunn.test)
+```
+
+# Reference Data Setup
+## Read in data
+### trnL database data
+Load in old and new trnL reference databases
+```{r}
+db <- readDNAStringSet(here('Data/trnLGH_taxonomy.fasta'))
+old_db <- readDNAStringSet(here('Data/trnLGH_db_taxonomy_old.fasta'))
+```
+### FAO data
+Load in linkage between FAO groups and species from [Martin *et al.*, 2019](https://dx.doi.org10.1371/journal.pone.0209788).
+```{r}
+fao.names <- read_csv(here('Data/Martin_PLOSONE_2019_FAOSTAT to taxon mapping_corrected.csv'))
+
+# Remove the NA from this set - this is "Grain, mixed"
+fao.names <- fao.names %>% 
+  mutate(species = `Corrected Species`) %>% 
+  filter(species != "NA")
+
+# Exclude non-food crops
+excludedGroups <- c("Agave fibres nes", "Bastfibres, other", "Fibre crops nes", "Manila fibre (abaca)", "Sisal")
+fao.names <- fao.names %>% 
+  filter(!(`FAO commodity group` %in% excludedGroups))
+
+
+# remove whitespaces + non-breaking whitespaces
+# Function to remove leading/trailing spaces (including non-breaking spaces)
+trim_all_spaces <- function(x) {
+  gsub("^[[:space:]\u00A0]+|[[:space:]\u00A0]+$", "", x)
+}
+
+
+# Apply function to 'Text' column
+fao.names$species <- sapply(fao.names$species, trim_all_spaces)
+
+# Note that some of the corresponding species are duplicated: just pick the first entry for simplicity
+dim(fao.names)
+n_distinct(fao.names$Species)
+
+fao.names <- 
+     fao.names %>% 
+     group_by(species) %>% 
+     summarize(across(everything(),
+                      dplyr::first))
+
+fao.names <- fao.names %>% 
+  mutate(source = "FAO") %>% 
+  select(source, species)
+
+head(fao.names)
+```
+
+### trnL participant data
+```{r}
+ps_master.foods <- readRDS(here("Data/20250929_master_trnL_ps_glommed.rds"))
+```
+
+
+## Process trnL databases
+```{r}
+# Re-organize databases
+db.df <- 
+     data.frame(name = names(db),
+                seq = as.character(db)) %>%
+     separate(name, 
+              into = c("superkingdom",
+                       "phylum",
+                       "class",
+                       "order",
+                       "family",
+                       "genus",
+                       "species",
+                       "subspecies",
+                       "varietas",
+                       "forma"),
+              sep = ';')
+
+db.df.old <- 
+     data.frame(name = names(old_db),
+                seq = as.character(old_db)) %>%
+     separate(name, 
+              into = c("superkingdom",
+                       "phylum",
+                       "class",
+                       "order",
+                       "family",
+                       "genus",
+                       "species",
+                       "subspecies",
+                       "varietas",
+                       "forma"),
+              sep = ';')
+
+
+
+db.df
+```
+
+How many distinct ASVs are in our database?
+```{r}
+n_distinct(db.df.old$seq)
+n_distinct(db.df$seq)
+```
+
+```{r}
+# Simplify the database input so we only have one line per included taxon
+nrow(db.df)
+
+db.df <- 
+     db.df %>% 
+     select(order:species) %>% 
+     distinct() %>% 
+     mutate(source = 'reference') 
+
+nrow(db.df)
+```
+
+Repeat this for the old reference database
+```{r}
+nrow(db.df.old)
+
+db.df.old <- 
+     db.df.old %>% 
+     select(order:species) %>% 
+     distinct() %>% 
+     mutate(source = 'reference') 
+
+nrow(db.df.old)
+```
+
+## Combine trnL database info with FAO data
+```{r}
+# Pre-join dimensions
+cat('trnL reference species:', nrow(db.df), '\n')
+cat('Old trnL reference species:', nrow(db.df.old), '\n')
+cat('Species in fao:', nrow(fao.names), '\n')
+```
+
+Log when reference species are new in this version of the database
+```{r}
+# check for species in db.df that are not in db.df.old
+newSpecies <- db.df %>%  
+     anti_join(db.df.old, by = c('order', 'family', 'genus', 'species')) %>%  
+     .$species 
+
+missingSpecies <- db.df.old %>%  
+     anti_join(db.df, by = c('order', 'family', 'genus', 'species')) %>%  
+     .$species 
+
+db.df <- db.df %>% 
+  mutate(newToDb = ifelse(species %in% newSpecies, 'new', 'old')) %>% 
+  select(species, source, newToDb)
+db.df
+```
+
+```{r}
+# Join on shared taxonomy columns
+combined.df <- 
+     bind_rows(fao.names,
+               db.df) 
+     
+dim(combined.df)
+head(combined.df)
+```
+
+# Coverage stats
+```{r}
+# What % of FAO species are in the reference database?
+df <- combined.df %>% 
+     mutate(present = 1) %>% 
+     pivot_wider(id_cols = species,
+                 names_from = 'source',
+                 values_from = 'present') %>% 
+     # Add back in new to db data
+     left_join(select(db.df, species, newToDb), by = "species")
+inFAOAndRef <- df %>%
+     filter(FAO == 1, !is.na(reference))
+faoSpecies <- df %>%
+     filter(FAO == 1)
+nrow(inFAOAndRef)/nrow(faoSpecies) * 100
+# 69.9% of species in FAO are in the reference database
+
+# What was the old percentage?
+inFAOAndOldRef <- df %>%
+     filter(FAO == 1, !is.na(reference), newToDb == "old")
+nrow(inFAOAndOldRef)/nrow(faoSpecies) * 100
+# 55.8% of species in FAO are in the old ref database
+
+# What % increase is this?
+(nrow(inFAOAndRef)/nrow(faoSpecies))/(nrow(inFAOAndOldRef)/nrow(faoSpecies))
+# 25% increase in coverage of major crops
+
+```
+
+
+# Figure 1A - Visualize taxa
+## Process trnL data into country level consumption
+```{r}
+# find % of samples within each country that have a given ASV present
+countryLevelConsumption <- ps_master.foods@otu_table %>% 
+  data.frame() %>% 
+  mutate(country = ps_master.foods@sam_data$country) %>%
+  group_by(country) %>%
+  summarize_all(funs(sum(. > 0)/n())) %>%
+  gather(key = "ASV", value = "percent", -country) %>% 
+  pivot_wider(names_from = country, values_from = percent) %>% 
+  data.frame()
+
+countryLevelConsumption$fao <- FALSE
+countryLevelConsumption$newToRef <- TRUE
+rownames(countryLevelConsumption) <- countryLevelConsumption$ASV
+
+
+# Note: If FoodSeq tracks a taxa below the species level and this is only tracked by FAO at the species level, we count this as a match
+
+# Determine which ASVs are tracked by FAO and which are new to the database
+for(asv in countryLevelConsumption$ASV){
+  
+  speciesList <- ps_master.foods@tax_table[asv,"correspondingTaxa"] %>% 
+    strsplit(split = ", ") %>% 
+    unlist()
+  
+  for(faoSpecies in fao.names$species){
+    if(any(grepl(faoSpecies, speciesList))){
+      countryLevelConsumption[asv,"fao"] <- TRUE
+    }
+  }
+  
+  
+  for(species in speciesList){
+    if(any(grepl(species, db.df.old$species))){
+      countryLevelConsumption[asv,"newToRef"] <- FALSE
+    }
+  }
+  
+}
+
+# Reorder ASVs based on fao and ref
+countryLevelConsumption <- countryLevelConsumption %>%
+  mutate(
+    ASV = factor(ASV, levels = ASV[order(!fao, !newToRef, decreasing = TRUE)]) # Custom ordering
+  )
+
+# Hierarchical clustering based upon the data - this dendrogram will be used to order and plot the data
+# Compute distance matrix
+distance_matrix <- dist(select(countryLevelConsumption, -ASV, - newToRef, -fao), method = "euclidean")
+
+# Perform hierarchical clustering
+hc <- hclust(distance_matrix)
+```
+
+## Visualize the baseline tree
+```{r fig.width = 10}
+circ <- ggtree(hc,
+            layout = 'circular',
+            size = 0.4,
+            xlim = 5)
+circ 
+```
+
+## Visualize the tree with consumption data
+Add in country level profiles of consumption
+``` {r}
+p1 <- circ
+
+countryColors <- c("#4477AA", "#228833", "#AA3377", "#BBBBBB", "#66CCEE", "#CCBB44", "#EE6677")
+names(countryColors) <- c("Ghana", "Honduras", "Israel", "Jamaica", "Philippines", "South.Africa", "USA")
+
+countryRows <- countryLevelConsumption %>% 
+  select(Ghana, Honduras, Israel, Jamaica, Philippines, South.Africa, USA)
+
+countryRowsMelted <- countryRows %>% 
+  rownames_to_column() %>% 
+  melt(id.vars = c("rowname")) %>% 
+  mutate(value = case_when(value == 0 ~ "#FFFFFF",
+                           TRUE ~ scales::alpha(countryColors[variable], 1)))
+
+countries <- unique(countryRowsMelted$variable)
+for (i in seq(length(countries))){
+  specificCountry <- countries[i]
+  specificCountryData <- countryRowsMelted %>% 
+    filter(variable == specificCountry) 
+  rownames(specificCountryData) <- specificCountryData$rowname
+  specificCountryData <- specificCountryData %>% 
+    select(-rowname, -variable)
+  
+  p1 <- gheatmap(p1, specificCountryData, offset= (i-1)*.29-0.09, width=.25,
+         colnames = F) +
+    scale_fill_identity()
+
+}
+
+p1
+```
+## Visualize the tree with FAO data
+Add in layer for FAO presence
+``` {r}
+numCountries <- n_distinct(countries)
+
+# Manually edit Ipomoea alba as this ASV is likely sweet potato
+countryLevelConsumption["ATCCTGTTTTCCGAAAACAAACAAAAGTTCAGAAAAAAG","fao"] <- TRUE
+
+refRow <- countryLevelConsumption %>% 
+  select(fao) %>% 
+  mutate(fao = case_when(fao ~ "#4E79A7",
+                         !fao ~ "#F28E2B" ))
+
+p2 <- gheatmap(p1, refRow, offset=(numCountries) * 0.29, width=.25, colnames = F) +
+  scale_fill_identity() +
+  theme(legend.position = "none")
+p2
+```
+## Visualize the tree with summary of country data
+Plot ASV rarity
+```{r}
+# gather number of countries each ASV is present in then convert to a color directly so that we can plot the values directly
+presAbsByCountry <- ifelse(countryRows > 0, 1, 0) %>% 
+  rowSums() %>% 
+  data.frame(numCountriesPresentIn = .) %>% 
+  mutate(numCountriesPresentIn = scales::alpha("darkgreen", numCountriesPresentIn/numCountries))
+           
+# plot the number of countries present as a ring
+p3 <- gheatmap(p2, presAbsByCountry, offset= (numCountries + 1) * .29, width=.25,
+         colnames = F) +
+    scale_fill_identity()
+p3
+```
+## Visualize final tree without labels
+Open and rotate the tree then plot it
+```{r fig.width = 14}
+finalTreePlot <- (p3 + theme(legend.position = "none") + scale_y_reverse()) %>% 
+  open_tree(130) %>% 
+  rotate_tree(90) 
+finalTreePlot
+```
+## Visualize the final tree with taxa labels
+Add specific taxa labels around the rim - emphasizing major crops and crops that are missing from FAO
+```{r fig.width = 8.5}
+
+finalTreePlot2 <- finalTreePlot
+
+# Convert ASVs to their common names
+tax_table_df <- as.data.frame(ps_master.foods@tax_table)
+
+tax_table_df <- tax_table_df %>%
+  rownames_to_column(var = "label_lookup")
+
+finalTreePlot2$data <- finalTreePlot2$data %>%
+  left_join(tax_table_df %>% select(label_lookup, name),
+            by = c("label" = "label_lookup")) %>%
+  mutate(label = ifelse(!is.na(name), name, label))
+
+# only include the specified taxa labels
+labelsToInclude <- c("Poaceae (Rye,  Wheat)", "Oryza sativa", "Poaceae (Adlay, Corn)", "Fabaceae (Guar bean, Soybean, Velvet Bean)",
+                     "Asteraceae (Chamomile, Indian Chrysanthemum)", "Salvia officinalis", "Lamiaceae (Anise Hyssop, Lemon Balm, Rosemary)", "Lamiaceae (Common Lavender, Pineapple Sage, Chia seed)", "Bixa orellana", "Salvia rosmarinus", "Cucurbitaceae (Chayote, Ivy Gourd, Horned melon)", "Ocimum basilicum", "Aspalathus linearis", "Moringa oleifera", "Macadamia integrifolia", "Eleocharis dulcis", "Ginkgo biloba", "Adansonia", "Lobularia maritima", "Fabaceae (Licorice, Vegetable-Hummingbird)", "Salacca zalacca", "Muntingia calabura", "Echinochloa frumentacea", "Momordica charantia", "Zingiberaceae (Greater Galangal, Lesser Galangal,  Torch Ginger, Beehive Ginger)", "Brassica oleracea", "Lactuca sativa", "Cicer arietinum", "Plantago ovata")
+
+finalTreePlot2$data <- finalTreePlot2$data %>%
+  mutate(label = case_when(label %in% labelsToInclude ~ label,
+                           TRUE ~ "")) %>%
+  select(-name)
+
+
+(finalTreePlot2 + geom_tiplab(aes(label = label), size = 2.5, offset=2.8)) 
+ggsave(filename = here("Figures/Figure1a_withLabels.pdf"), width = 8.5)
+```
+
+# Figure 1B
+Quantify the prevalence of different ASVs by their FAO tracking status
+
+Count up the number of different countries consuming taxa
+```{r fig.height = 6, fig.width = 3}
+numCountriesConsuming <-  ifelse(select(countryLevelConsumption, -fao, -newToRef, -ASV) > 0,1,0) %>% 
+  rowSums()
+countryLevelConsumption$numCountriesConsuming <- numCountriesConsuming
+```
+
+Plot the results by FAO tracking status
+```{r}
+# plot the results
+plotData <- countryLevelConsumption %>% 
+  mutate(FAO = case_when(fao ~ "Yes", 
+                         TRUE ~ "No")) %>% 
+  select(FAO, numCountriesConsuming)
+
+plotData$FAO <- factor(plotData$FAO, levels = c("Yes", "No"))
+
+
+fig1b <- ggplot(plotData, aes(y = numCountriesConsuming, x = FAO, fill = FAO)) + 
+  geom_boxplot() +
+  geom_jitter(alpha = 0.3, height = 0.1, size = 3) +
+  scale_color_identity() + 
+  labs(x = "FAO Tracking Status", y = "# Countries Taxa Present In") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = c("#4E79A7", "#F28E2B"))
+fig1b
+
+ggsave(fig1b, filename = here("Figures/Figure1b_raw.pdf"),
+       width = 4, height = 6)
+```
+
+Run statistics
+```{r}
+# normality test
+ks.test(filter(plotData, FAO == "Yes")$numCountriesConsuming, "pnorm")
+ks.test(filter(plotData, FAO == "No")$numCountriesConsuming, "pnorm")
+
+# both significant so reject null - need to use wilcox test here
+wilcox.test(filter(plotData, FAO == "Yes")$numCountriesConsuming, filter(plotData, FAO == "No")$numCountriesConsuming)
+```
+Calculate some basic stats for use in the text
+```{r}
+
+# percent of consumed ASVs not tracked by the FAO
+consumedTaxa <- filter(countryLevelConsumption, numCountriesConsuming > 0)
+nrow(filter(consumedTaxa, !fao))/nrow(consumedTaxa)*100
+# 34% of ASVs detected by FoodSeq are tracking species that are not in FAO
+
+# among ASVs tracked in only one country - how many are tracked by the FAO?
+uniquelyConsumedTaxa <- filter(countryLevelConsumption, numCountriesConsuming == 1)
+nrow(filter(uniquelyConsumedTaxa, !fao))/nrow(uniquelyConsumedTaxa)*100
+# 59% of ASVs detected in only one country are not tracked by FAO
+
+# % of ASVs in only one country
+nrow(uniquelyConsumedTaxa)/nrow(countryLevelConsumption)*100
+# 42% of ASVs
+```
+
+
+# Extended Data Figure 1 - Plant dietary diversity by country
+
+Prepare data
+```{r}
+samdf <- ps_master.foods@sam_data %>% 
+  data.frame() %>% 
+  filter(!is.na(country))
+```
+
+Run statistical test to figure out if there are differences by country
+```{r}
+# test for normality - all sig so reject null 
+ks.test(filter(samdf, country == "USA")$pMR, "pnorm")
+ks.test(filter(samdf, country == "Ghana")$pMR, "pnorm")
+ks.test(filter(samdf, country == "Jamaica")$pMR, "pnorm")
+ks.test(filter(samdf, country == "Honduras")$pMR, "pnorm")
+ks.test(filter(samdf, country == "South Africa")$pMR, "pnorm")
+ks.test(filter(samdf, country == "Israel")$pMR, "pnorm")
+ks.test(filter(samdf, country == "Philippines")$pMR, "pnorm")
+
+# First we test if there is a significant difference by country using Kruskal Wallis H test
+kruskal_result <- kruskal.test(pMR ~ country, data = samdf)
+print(kruskal_result)
+
+# significant, therefore we perform Dunn's Test to evaluate which pairs of countries have sig. differences
+dunn_result <- dunn.test(samdf$pMR, samdf$country, method="bh")
+print(dunn_result)
+```
+
+Visualize diet diversity by country with statistical results displayed
+```{r}
+Diff <- dunn_result$P.adjusted < 0.05
+Names <- gsub(" ", "", dunn_result$comparisons)
+names(Diff) <-  Names
+CLD <- multcompLetters(Diff)
+annotations <- summary(CLD)
+
+names(CLD$Letters) <- ifelse(names(CLD$Letters) == "SouthAfrica", "South Africa", names(CLD$Letters))
+
+samdf$annotation <- as.character(CLD$Letters[as.character(samdf$country)])
+
+samdf <- samdf %>% 
+  mutate(country = fct_reorder(country, pMR, .fun = mean))
+
+ggplot(samdf, aes(y = country, x = pMR, color = country)) +
+  geom_boxplot(lwd = 1) +
+  labs(y = "", x = "Plant Richness") +
+  theme_classic() +
+  geom_jitter(alpha = 0.5, size = 0.3, width = 0) +
+  geom_text(aes(label = annotation, x = 48), position = position_dodge(width = 0.75), size = 10) +
+  theme(legend.position = 'none',  axis.text = element_text(size = 18),
+        axis.title = element_text(size = 18), axis.ticks.x = element_line(linewidth = 2), axis.line.x = element_line(linewidth = 1)) +
+  scale_color_manual(values = countryColors)  
+
+ggsave(here('Figures/ExtendedDataFigure1.pdf'), height = 4, width = 6)
+```
+
+## Table 1 - Cohort characteristics
+
+```{r}
+# pull sample data 
+samdf <- ps_master.foods %>% 
+  sample_data() %>% 
+  data.frame() %>% 
+  mutate(study = case_when(study == "METS" ~ paste0("METS-", country),
+                           TRUE ~ study))
+
+per_participant <- samdf %>%
+  group_by(study, subj) %>%
+  summarize(
+    age = if (all(is.na(age))) NA_real_ else dplyr::first(na.omit(age)),
+    bmi = if (all(is.na(bmi))) NA_real_ else dplyr::first(na.omit(bmi)),
+
+    sex     = if (all(is.na(sex))) NA_character_ else dplyr::first(na.omit(sex)),
+    country = if (all(is.na(country))) NA_character_ else dplyr::first(na.omit(country)),
+
+    inflammation       = if (all(is.na(inflammation))) NA 
+                         else any(inflammation %in% c(1, TRUE), na.rm = TRUE),
+    hbp                = if (all(is.na(hbp))) NA 
+                         else any(hbp %in% c(1, TRUE), na.rm = TRUE),
+    metabolic_syndrome = if (all(is.na(metabolic_syndrome))) NA 
+                         else any(metabolic_syndrome %in% c(1, TRUE), na.rm = TRUE),
+    obese              = if (all(is.na(obese))) NA 
+                         else any(obese %in% c(1, TRUE), na.rm = TRUE),
+
+    n_samples = n(),
+    .groups = "drop"
+  )
+
+# Now summarize at the study level across participants
+tbl <- per_participant %>%
+  group_by(study) %>%
+  summarize(
+    numParticipants = dplyr::n_distinct(subj),
+    numSamples      = sum(n_samples), 
+
+    Age_mean_sd = sprintf("%.1f ± %.1f",
+                          mean(age, na.rm = TRUE),
+                          sd(age,   na.rm = TRUE)),
+
+    Female_n = sum(sex == "Female", na.rm = TRUE),
+    Male_n   = sum(sex == "Male",   na.rm = TRUE),
+    Sex      = sprintf("%d (%.1f%%)",
+                       Male_n,   Male_n   / numParticipants * 100),
+
+    Country = dplyr::first(na.omit(country)), 
+
+    BMI_mean_sd = sprintf("%.1f ± %.1f",
+                          mean(bmi, na.rm = TRUE),
+                          sd(bmi,   na.rm = TRUE)),
+
+    Inflammation       = sprintf("%d (%.1f%%)",
+                                 sum(inflammation, na.rm = TRUE),
+                                 sum(inflammation, na.rm = TRUE) / numParticipants * 100),
+    Hypertension       = sprintf("%d (%.1f%%)",
+                                 sum(hbp, na.rm = TRUE),
+                                 sum(hbp, na.rm = TRUE) / numParticipants * 100),
+    MetabolicSyndrome  = sprintf("%d (%.1f%%)",
+                                 sum(metabolic_syndrome, na.rm = TRUE),
+                                 sum(metabolic_syndrome, na.rm = TRUE) / numParticipants * 100),
+    Obesity            = sprintf("%d (%.1f%%)",
+                                 sum(obese, na.rm = TRUE),
+                                 sum(obese, na.rm = TRUE) / numParticipants * 100),
+    .groups = "drop"
+  ) %>%
+  select(study, numParticipants, numSamples, Age_mean_sd, Sex, Country, BMI_mean_sd,
+         Inflammation, Hypertension, MetabolicSyndrome, Obesity)
+
+
+tbl                
+```
+ 
+ 

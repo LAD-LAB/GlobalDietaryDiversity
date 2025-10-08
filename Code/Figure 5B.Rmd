@@ -1,0 +1,257 @@
+---
+title: "Figure 5B"
+output: pdf_document
+---
+# Packages
+```{r}
+library(tidyverse)
+library(here)
+library(phyloseq)
+```
+
+
+# Data setup
+## FoodSeq data
+Load in the phyloseq objects
+```{r}
+ps_master.foods.clr <- readRDS(here("Data/20250929_master_trnL_ps_glommed_clr_withPCs.rds"))
+ps_master.foods.ra <- readRDS(here("Data/20250929_master_trnL_ps_glommed_ra_withPCs.rds"))
+```
+
+## NORS Dataset
+### Load in data
+Load in the NORS dataset
+```{r}
+norsData <- read_csv(here("Data/NORS_20250508.csv"))
+
+# Filter the data to only include those with known food vehicles
+norsData_filtered <- norsData %>%
+  filter(`Food Contaminated Ingredient` != "") %>% 
+  select(Illnesses, `Food Contaminated Ingredient`) %>% 
+  # split up all the food vehicles into lists
+  mutate(Food.Contaminated.Ingredient = str_split(`Food Contaminated Ingredient`, ";"))
+
+head(norsData_filtered)
+```
+
+Load in food to species linkages
+```{r}
+# load in the spreadsheet
+foodVehicleToSpecies <- read_csv(here("Data/NORS_foodsToTaxa.csv"))
+
+# Only ingredients that contain plant components
+foodVehicleToSpecies_plantIngredients <- foodVehicleToSpecies %>% 
+  filter(plantIngredientPresent) %>% 
+  .$Food.Contaminated.Ingredient
+
+# Plant ingredients with certain species components
+foodVehicleToSpecies_certainPlantIngredients <- foodVehicleToSpecies %>% 
+  filter(plantIngredientPresent, !uncertainIngredients) %>% 
+  select(Food.Contaminated.Ingredient, plantTaxa)
+
+# Join to the original NORS data to link to outbreaks - create 2 versions so we can track % of illnesses/outbreaks lost with each filter
+norsData_filtered_plantIngredients <- norsData_filtered %>% 
+    filter(map_lgl(Food.Contaminated.Ingredient, ~ any(.x %in% foodVehicleToSpecies_plantIngredients)))
+
+
+norsData_filtered_linkedToSpecies_certainPlantIngredients <- norsData_filtered %>% 
+  mutate(outbreak_id = row_number()) %>% # keep a key so we can put rows back together later                   
+  unnest(cols = c(Food.Contaminated.Ingredient))  %>%     # Split rows that contain multiple ingredients           
+  left_join(foodVehicleToSpecies_certainPlantIngredients, by = "Food.Contaminated.Ingredient") %>% # Bring in plant taxa for every single ingredient
+  group_by(outbreak_id) %>% # Collapse back to original rows, concatenating unique taxa and ignoring NAs
+  summarise(Illnesses = first(Illnesses),
+              Food.Contaminated.Ingredient = paste(Food.Contaminated.Ingredient, collapse = "; "),
+              plantTaxa = paste(unique(plantTaxa[!is.na(plantTaxa)]),
+                                collapse = "; ")) %>% 
+  filter(plantTaxa != "")
+```
+### Filtering stats
+Gather stats on the filtering process
+```{r}
+# Get the total number of outbreaks and cases
+totalOutbreaks <- nrow(norsData)
+totalIllnesses <- sum(norsData$Illnesses)
+
+cat("Total outbreaks: ", totalOutbreaks, "\n",
+    "Total illnesses: ", totalIllnesses, "\n")
+
+# Get the number of outbreaks and cases with known food contaminated ingredients
+totalOutbreaks_knownFood <- nrow(norsData_filtered)
+totalIllnesses_knownFood <- sum(norsData_filtered$Illnesses)
+
+cat("Total outbreaks with known food contaminated ingredients: ", totalOutbreaks_knownFood, "; ", "% of total = ", totalOutbreaks_knownFood/totalOutbreaks*100,"\n",
+    "Total illnesses with known food contaminated ingredients: ", totalIllnesses_knownFood, "; ", "% of total = ", totalIllnesses_knownFood/totalIllnesses*100,"\n")
+
+# Get the number of outbreaks and cases with plant ingredients
+totalOutbreaks_plantIngredients <- nrow(norsData_filtered_plantIngredients)
+totalIllnesses_plantIngredients <- sum(norsData_filtered_plantIngredients$Illnesses)
+cat("Total outbreaks with plant ingredients: ", totalOutbreaks_plantIngredients, "; ", "% of total = ", totalOutbreaks_plantIngredients/totalOutbreaks*100,"\n",
+    "Total illnesses with plant ingredients: ", totalIllnesses_plantIngredients, "; ", "% of total = ", totalIllnesses_plantIngredients/totalIllnesses*100,"\n")
+
+# Get the number of outbreaks and cases with certain plant ingredients
+totalOutbreaks_certainPlantIngredients <- nrow(norsData_filtered_linkedToSpecies_certainPlantIngredients)
+totalIllnesses_certainPlantIngredients <- sum(norsData_filtered_linkedToSpecies_certainPlantIngredients$Illnesses)
+cat("Total outbreaks with certain plant ingredients: ", totalOutbreaks_certainPlantIngredients, "; ", "% of total = ", totalOutbreaks_certainPlantIngredients/totalOutbreaks*100,"\n",
+    "Total illnesses with certain plant ingredients: ", totalIllnesses_certainPlantIngredients, "; ", "% of total = ", totalIllnesses_certainPlantIngredients/totalIllnesses*100,"\n")
+```
+
+```{r}
+# Get the number of taxa represented here
+norsTaxa <- norsData_filtered_linkedToSpecies_certainPlantIngredients$plantTaxa %>% 
+  str_split("; ") %>%
+  unlist()
+norsTaxa %>% 
+  n_distinct()
+
+coveredASVs <- lapply(unique(norsTaxa), function(x) {
+  grep(x, ps_master.foods.ra@tax_table[,"correspondingTaxa"])
+}) %>% 
+  unlist()
+coveredASVs <- unique(coveredASVs)
+coveredASVs <- rownames(ps_master.foods.ra@tax_table)[coveredASVs]
+
+cat("Number of ASVs covered by these taxa: ", length(coveredASVs), "\n")
+cat("% of reads covered by these taxa: ", sum(colMeans(ps_master.foods.ra@otu_table[,coveredASVs]))  * 100, "\n")
+```
+
+## Process data
+Gather outbreak data and summarize by plant taxa
+```{r}
+outbreakDataBySpecies <- norsData_filtered_linkedToSpecies_certainPlantIngredients %>% 
+  mutate(plantTaxa = str_split(plantTaxa, "; ")) %>% 
+  unnest(cols = c(plantTaxa)) %>% 
+  group_by(plantTaxa) %>% 
+  summarise(nOutbreaks = n(),
+            nCases = sum(Illnesses),
+            percentOutbreaks = nOutbreaks / totalOutbreaks_certainPlantIngredients * 100,
+            percentCases = nCases / totalIllnesses_certainPlantIngredients * 100,
+            linkedOutbreaks = list(outbreak_id)) %>% 
+  arrange(desc(percentCases))
+
+outbreakDataBySpecies
+```
+
+Create "average" person of each dietary cluster
+```{r}
+# Group samples into their diet clusters
+starchyThreshold <- quantile(data.frame(ps_master.foods.clr@sam_data)$PC1, probs = c(0,0.25,0.5,0.75,1))["75%"]
+dietClasses <- data.frame(ps_master.foods.clr@sam_data) %>% 
+  mutate(dietClass = case_when(PC1 < 0 & PC2 > 0 ~ "Salad Bowl",
+                               PC1 > starchyThreshold ~ "Starchy",
+                               TRUE ~ "Other")) %>% 
+  select(sampleID, dietClass)
+saladBowlSamples <- dietClasses %>% 
+  filter(dietClass == "Salad Bowl") %>% 
+  select(sampleID) %>% 
+  unlist() %>% 
+  as.character()
+starchySamples <- dietClasses %>% 
+  filter(dietClass == "Starchy") %>% 
+  select(sampleID) %>% 
+  unlist() %>% 
+  as.character()
+
+saladBowlSamples_foodSeqData <- ps_master.foods.ra %>% 
+  subset_samples(sampleID %in% saladBowlSamples) %>% 
+  otu_table()
+starchySamples_foodSeqData <- ps_master.foods.ra %>%
+  subset_samples(sampleID %in% starchySamples) %>% 
+  otu_table()
+
+# Get average sample of each diet cluster
+saladBowlSamples_foodSeqData_averageSample <- colMeans(saladBowlSamples_foodSeqData)
+starchySamples_foodSeqData_averageSample <- colMeans(starchySamples_foodSeqData)
+```
+
+Determine notable taxa contributors to each dietary cluster
+```{r}
+# Get taxa above 1% contribution to the cluster
+saladBowlSamples_largeTaxaContributorsASVs <- names(saladBowlSamples_foodSeqData_averageSample[saladBowlSamples_foodSeqData_averageSample > 0.01])
+starchySamples_largeTaxaContributorsASVs <- names(starchySamples_foodSeqData_averageSample[starchySamples_foodSeqData_averageSample > 0.01])
+
+# Get the taxa that correspond to each ASV
+saladBowlSamples_largeTaxaContributors <- ps_master.foods.clr@tax_table[saladBowlSamples_largeTaxaContributorsASVs, "correspondingTaxa"] %>%
+  str_split(", ") %>% 
+  unlist() %>% 
+  unique()
+starchySamples_largeTaxaContributors <- ps_master.foods.clr@tax_table[starchySamples_largeTaxaContributorsASVs, "correspondingTaxa"] %>%
+  str_split(", ") %>% 
+  unlist() %>% 
+  unique()
+```
+
+Link clusters to outbreaks
+```{r}
+# Get the percent of cases linked to each of these taxa
+saladBowlSamples_largeTaxaContributors_outbreakData <- saladBowlSamples_largeTaxaContributors %>% 
+  data.frame(plantTaxa = .) %>% 
+  left_join(outbreakDataBySpecies, by = "plantTaxa") %>% 
+  filter(!is.na(percentCases))  %>% 
+  mutate(foodseqPattern = "Salad Bowl")
+
+starchySamples_largeTaxaContributors_outbreakData <- starchySamples_largeTaxaContributors %>% 
+  data.frame(plantTaxa = .) %>% 
+  left_join(outbreakDataBySpecies, by = "plantTaxa") %>% 
+  filter(!is.na(percentCases)) %>% 
+  mutate(foodseqPattern = "Starchy")
+
+
+# Determine the outbreaks covered by each dietary pattern, only counting each outbreak once
+saladBowlSamples_largeTaxaContributors_outbreaks <- saladBowlSamples_largeTaxaContributors_outbreakData$linkedOutbreaks %>% 
+  unlist() %>% 
+  unique() 
+starchySamples_largeTaxaContributors_outbreaks <- starchySamples_largeTaxaContributors_outbreakData$linkedOutbreaks %>%
+  unlist() %>% 
+  unique()
+
+# Get the number of cases associated with each outbreak
+saladBowlSamples_largeTaxaContributors_illnesses <- norsData_filtered_linkedToSpecies_certainPlantIngredients %>% 
+  filter(outbreak_id %in% saladBowlSamples_largeTaxaContributors_outbreaks) %>% 
+  .$Illnesses %>% 
+  sum()
+starchySamples_largeTaxaContributors_illnesses <- norsData_filtered_linkedToSpecies_certainPlantIngredients %>%
+  filter(outbreak_id %in% starchySamples_largeTaxaContributors_outbreaks) %>% 
+  .$Illnesses %>% 
+  sum()
+
+
+saladBowlSamples_largeTaxaContributors_illnessesPercent <- saladBowlSamples_largeTaxaContributors_illnesses / totalIllnesses_certainPlantIngredients * 100 
+starchySamples_largeTaxaContributors_illnessesPercent <- starchySamples_largeTaxaContributors_illnesses / totalIllnesses_certainPlantIngredients * 100
+```
+
+# Visualizations
+## Figure 5B
+Compare % of foodborne illnesses explained by large taxa contributors of each dietary cluster
+```{r}
+plotData <- data.frame(
+  foodseqPattern = factor(c("Salad Bowl", "Starchy"), levels = c("Starchy", "Salad Bowl")),
+  percentCases = c(saladBowlSamples_largeTaxaContributors_illnessesPercent, starchySamples_largeTaxaContributors_illnessesPercent)
+)
+
+p <- ggplot(plotData, aes(x = foodseqPattern, y = percentCases, fill = foodseqPattern)) + 
+  geom_bar(stat = "identity") +
+  labs(y = "% of Plant-associated\n Foodborne Illness Cases", x = "FoodSeq Pattern") +
+  theme_minimal() + 
+  theme(legend.position = "none", axis.title.x = element_text(face = "bold"), axis.title.y = element_text(face = "bold")) +
+  scale_fill_manual(values = c("orange", "#00BFC4"))
+p
+ggsave(filename = here("Figures/Figure5B.pdf"),
+       dpi = 300, plot = p, height = 4, width = 2.75)
+```
+## Extended Data Figure 5 - Species Prevalents in Illnesses
+Prevalence of different species in foodborne illnesses
+```{r fig.height = 5.5}
+plotData <- outbreakDataBySpecies %>% 
+  arrange(-desc(percentCases)) %>%
+  mutate(rank = row_number(), 
+         plantTaxa = factor(plantTaxa, levels = unique(plantTaxa)))
+
+p <- ggplot(plotData, aes(y = plantTaxa, x = percentCases, fill = percentCases)) + 
+  geom_bar(stat = "identity") +
+  labs(x = "% of Plant-associated Foodborne Illness Cases", y = "Plant Taxa") +
+  theme_minimal() + 
+  theme(legend.position = "none") 
+p
+ggsave(filename = here("Figures/ExtendedDataFigure5.pdf"),
+       dpi = 300, plot = p, height = 8, width = 6)
+```

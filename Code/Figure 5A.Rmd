@@ -1,0 +1,186 @@
+---
+title: "Figure 5A"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(here)
+library(phyloseq)
+```
+
+# Load in the datasets
+## ICP Data
+Load in the data linkage of taxa to grouping
+```{r}
+# load in the ICP csv file 
+icp_taxaLinks <- read_csv(here("Data/taxaToICPClass.csv"))
+
+# Process the basicHeadings columns - put things into their general categories
+icp_taxaLinks <- icp_taxaLinks %>% 
+  mutate(group = case_when(grepl("Rice", Classification) ~ "Bread and cereals",
+                           grepl("Other bakery products", Classification) ~ "Bread and cereals",
+                           grepl("Bread and cereals", Classification) ~ "Bread and cereals",
+                           grepl("Other cereals, flour and other cereal products", Classification) ~ "Bread and cereals",
+                           TRUE ~ Classification)) %>% 
+  select(Taxa, group)
+
+head(icp_taxaLinks)
+```
+Load in PPP data for Ghana and associated headings
+```{r}
+pppData <- read_csv(here("Data/pppData.csv"), skip = 4) %>% 
+  select(`Item Name`, Ghana)
+
+head(pppData)
+```
+
+## trnL Data
+```{r}
+ps_master.foods.clr <- readRDS(here("Data/20250929_master_trnL_ps_glommed_clr_withPCs.rds"))
+ps_master.foods.ra <- readRDS(here("Data/20250929_master_trnL_ps_glommed_ra_withPCs.rds"))
+```
+
+# Process data
+Link tax table to PPP data
+```{r}
+# Gather ASV RA data, add corresponding taxa to each ASV
+asvData <- ps_master.foods.ra@otu_table %>% 
+  t() %>% 
+  data.frame()
+asvData$correspondingTaxa <- ps_master.foods.ra@tax_table %>% 
+  data.frame() %>% 
+  .$"correspondingTaxa"
+
+# With all ASVs, calculate the average PPP value for the groupings covered by taxa in that ASV
+for (asv in rownames(asvData)){
+  asvCorrespondingTaxa <- asvData[asv, "correspondingTaxa"] %>% 
+    strsplit(split = ",") %>% 
+    unlist() %>% 
+    str_trim()
+  
+  # find associated PPP groups with this taxa
+  asvCorrespondingTaxaICP <- icp_taxaLinks %>% 
+    filter(Taxa %in% asvCorrespondingTaxa)
+
+  # if there are multiple rows then combine associated groups
+  asvCorrespondingGroups <- asvCorrespondingTaxaICP$group 
+  asvCorrespondingGroups <- unlist(strsplit(asvCorrespondingGroups, "; ", fixed = TRUE))
+  asvCorrespondingGroups <- unique(asvCorrespondingGroups)
+  
+  # get and average PPP values for associated groups
+  pppDataSpecificGroups <- pppData %>% 
+    filter(`Item Name` %in% asvCorrespondingGroups)
+  
+  # add these ppp values to the otuData object
+  asvData[asv, "ghana_ppp"] <- mean(pppDataSpecificGroups$Ghana)
+}
+```
+
+```{r}
+# Calculate average PPP by country for each sample - this is the country PPP for each taxa * the relative abundance of that taxa then summed across that sample
+samdf <- ps_master.foods.ra@sam_data %>% 
+  data.frame() %>% 
+  rownames_to_column(var = "rowname") %>% 
+  select(rowname, country) %>% 
+  mutate(rowname = str_replace_all(rowname, "-", "."))
+
+asvDataWithCountry <- asvData %>% 
+  select(-correspondingTaxa) %>% 
+  t() %>% 
+  data.frame() %>% 
+  rownames_to_column(var = "rowname") %>% 
+  left_join(samdf,by = "rowname") %>% 
+  mutate(country = case_when(rowname == "ghana_ppp"~"Ghana",
+                   !(rowname == "ghana_ppp") ~ country)) 
+
+# Take in ASV samples then apply a supplied country's PPP data to those samples to calculate
+samplePriceCalculator <- function(asvDataWithCountry, countryName, pppCountry){
+  
+  # Country data
+  countrySpecificASVs <- asvDataWithCountry %>% 
+    filter(country == countryName, !grepl("ppp", rowname)) %>% 
+    select(-country) %>% 
+    column_to_rownames(var = "rowname")
+ 
+  # Get the PPP data
+   countryPPP <- asvDataWithCountry %>% 
+    filter(country == pppCountry, grepl("ppp", rowname)) %>% 
+    select(-rowname, -country)
+   
+  countrySpecificASVs <- countrySpecificASVs %>% 
+    t() %>% 
+    data.frame() 
+  
+  # multiply each column by the PPP values for the specified country
+  prices <- (as.numeric(countryPPP) %*% as.matrix(countrySpecificASVs)) %>% 
+    t() %>% 
+    data.frame(dietPrice = ., country = countryName, pppCountry = pppCountry) %>% 
+    rownames_to_column(var = "linkingName")
+  
+  return(prices)
+}
+
+# Calculate the average PPP value for each sample in the US and Ghana based on Ghana prices
+ghanaSamplesGhanaPrices <- samplePriceCalculator(asvDataWithCountry, "Ghana", "Ghana")
+usaSamplesGhanaPrices <- samplePriceCalculator(asvDataWithCountry, "USA", "Ghana")
+israelSamplesGhanaPrices <- samplePriceCalculator(asvDataWithCountry, "Israel", "Ghana")
+philippinesSamplesGhanaPrices <- samplePriceCalculator(asvDataWithCountry, "Philippines", "Ghana")
+southAfricaSamplesGhanaPrices <- samplePriceCalculator(asvDataWithCountry, "South Africa", "Ghana")
+hondurasSamplesGhanaPrices <- samplePriceCalculator(asvDataWithCountry, "Honduras", "Ghana")
+jamaicaSamplesGhanaPrices <- samplePriceCalculator(asvDataWithCountry, "Jamaica", "Ghana")
+
+priceData <- rbind(ghanaSamplesGhanaPrices, usaSamplesGhanaPrices, israelSamplesGhanaPrices, philippinesSamplesGhanaPrices, southAfricaSamplesGhanaPrices, hondurasSamplesGhanaPrices, jamaicaSamplesGhanaPrices)
+
+# generate dietary clusters
+starchyThreshold <- quantile(data.frame(ps_master.foods.clr@sam_data)$PC1, probs = c(0,0.25,0.5,0.75,1))["75%"]
+
+samdf <- data.frame(ps_master.foods.clr@sam_data) %>% 
+  rownames_to_column(var = "linkingName") %>% 
+  mutate(linkingName = str_replace_all(linkingName, "-", "."))
+
+# Link priceData to PC values
+priceData <- priceData %>% 
+  left_join(select(samdf, linkingName, PC1, PC2), by = "linkingName")
+
+
+# classify each sample by diet pattern
+priceData <- priceData %>% 
+  mutate(dietClass = case_when(
+    PC2 > 0 & PC1 < 0 ~ "Salad Bowl",
+    PC1 > starchyThreshold ~ "Starchy",
+    TRUE ~ "Other"
+  )) 
+```
+
+# Analysis
+## Figure 5A - Visualize price data between clusters
+```{r}
+# Plot average PPP of starchy dietary pattern in ghana vs. salad bowl in ghana
+plotData <- priceData %>% 
+  filter(dietClass == "Salad Bowl" | country == "Ghana") %>% 
+  mutate(plotColumn = case_when(
+    dietClass == "Salad Bowl" ~ "Salad Bowl",
+    TRUE ~ "Ghana"
+  ))
+
+p <- ggplot(plotData, aes(x = plotColumn, y = dietPrice, color = plotColumn)) + 
+  geom_boxplot() + 
+  geom_jitter(width = 0.2, alpha = 0.5, size = 0.5, height = 0) +
+  labs(x = "FoodSeq Pattern", y = "Average PPP of Consumed Taxa") + 
+  theme_minimal() +
+  theme(legend.position = "none")
+
+p
+
+ggsave(filename = here("Figures/Figure5A.pdf"),
+       dpi = 300, plot = p, height = 4, width = 2.75)
+```
+## Statistics
+Run statistics on the differences between Ghana and Salad Bowl samples
+```{r}
+ks.test(filter(plotData, plotColumn == "Ghana")$dietPrice, "pnorm")
+ks.test(filter(plotData, plotColumn == "Salad Bowl")$dietPrice, "pnorm")
+
+wilcox.test(filter(plotData, plotColumn == "Ghana")$dietPrice, filter(plotData, plotColumn == "Salad Bowl")$dietPrice)
+```

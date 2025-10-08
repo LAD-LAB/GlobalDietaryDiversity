@@ -1,0 +1,479 @@
+---
+title: "dietaryPatternsAnalysis"
+output: pdf_document
+---
+Load the relevant packages
+```{r}
+library(tidyverse)
+library(reshape2)
+library(phyloseq)
+library(patchwork)
+library(here)
+library(lmtest)
+```
+
+
+# Preprocessing
+Load in the phyloseq object
+```{r}
+ps_master.foods.clr <- readRDS(here("Data/20250929_master_trnL_ps_glommed_clr_withPCs.rds"))
+```
+
+
+# Analysis
+## Analyze relationship between dietary diversity and other variables
+### Extended Data Figure 4 - Dietary plant richness vs. BMI
+```{r}
+output.pR.bmi <- glm(bmi ~ pMR + smoke + age + sex + alcohol + country, data = data.frame(ps_master.foods.clr@sam_data), family = gaussian) 
+output.pR.bmi.countryInteraction <- glm(bmi ~ smoke + age + sex + alcohol + country*pMR, data = data.frame(ps_master.foods.clr@sam_data), family = gaussian) 
+lrtest(output.pR.bmi, output.pR.bmi.countryInteraction)
+```
+Likelihood ratio test is negative, so we do not include country interaction term
+```{r}
+# Get model coefficients and confidence intervals for plotting
+bmiConf <- output.pR.bmi %>% 
+  confint()
+coefficientDf <- data.frame(summary(output.pR.bmi)$coefficients)
+bmiModelDf <- data.frame(coefficient = coefficientDf$Estimate, pValue =coefficientDf$Pr...t.., bmiConf) %>% 
+  rownames_to_column(var = "modelVariable") %>% 
+  filter(modelVariable %in% c("pMR")) 
+
+# fix column names - confidence intervals with periods mess with ggplot
+colnames(bmiModelDf) <- c("modelVariable", "coefficient", "pValue", "confint.lower", "confint.upper")
+
+# round estimates
+bmiModelDf <- bmiModelDf %>% 
+  mutate(coefficient = round(coefficient, 2), pValue = round(pValue, 2), confint.lower = round(confint.lower, 2), 
+         confint.upper = round(confint.upper, 2), errorbarColor = ifelse(pValue < 0.05, ifelse(coefficient > 0, "darkred", "darkblue"), "black"), 
+         pointColor = ifelse(pValue < 0.05, ifelse(coefficient > 0, "red", "blue"), "black"))
+
+fontSize <- 5
+
+mainPlot <- ggplot(data = bmiModelDf, aes(y = fct_rev(modelVariable))) +
+  geom_errorbar(aes(xmin=confint.lower, xmax=confint.upper), width = 0.2,size  = 0.75, color = bmiModelDf$errorbarColor) +
+  geom_point(aes(x=coefficient), shape=16, size=3, color = bmiModelDf$pointColor) +
+  geom_vline(xintercept = 0, linetype="dashed") +
+  annotate("text", x = -.075, y = 1.5, hjust = 0.5, label = "Reduced BMI", size = fontSize, fontface = "bold") +
+  annotate("text", x = 0.075, y = 1.5, hjust = 0.5, label = "Increased BMI", size = fontSize, fontface = "bold") +
+  labs(x = "Coefficient") + 
+  theme_classic() +
+  theme(axis.line.y = element_blank(),
+        axis.ticks.y= element_blank(),
+        axis.text.y= element_blank(),
+        axis.title.y= element_blank(),
+        axis.text.x= element_text(size = fontSize*3),
+        axis.title.x= element_text(size = fontSize*3))
+
+# create annotation with numerical values for these variables
+p_left <- ggplot(data = bmiModelDf, aes(y = fct_rev(modelVariable))) +
+  geom_text(aes(x = 0.1, label = "Plant Richness"), hjust = 0.25, size = fontSize) +
+  geom_text( aes(x = 1.8, label = paste0(coefficient, "(", confint.lower, ",", confint.upper,")")), hjust = 0.5, size = fontSize) +
+  geom_text(aes(x = 3.5,  label = pValue),hjust = 0.5, size = fontSize) +
+  theme_void() +
+  coord_cartesian(xlim = c(0, 4)) + 
+  annotate("text", x = 1.8, y = 1.5, label = "Estimate (95% CI)", size = fontSize, hjust = 0.5, fontface = "bold") +
+  annotate("text", x = 3.5, y = 1.5, label = "p-value", size = fontSize, hjust = 0.5, fontface = "bold") 
+
+
+p_left + mainPlot 
+
+ggsave(file = here("Figures/ExtendedDataFigure4.pdf"), plot = p_left + mainPlot , dpi = 300, width = 10, height = 2)
+
+```
+
+### Extended Data Table 3 - Dietary plant richness vs. cardiometabolic variables
+```{r}
+output.pR.bp <- glm(hbp ~ pMR + smoke + age + sex + alcohol + country, data = data.frame(ps_master.foods.clr@sam_data), family = binomial) 
+output.pR.bp.countryInteraction <- glm(hbp ~ smoke + age + sex + alcohol + country*pMR, data = data.frame(ps_master.foods.clr@sam_data), family = binomial) 
+lrtest(output.pR.bp, output.pR.bp.countryInteraction)
+
+output.pR.inflammation <- glm(inflammation ~ pMR + smoke + age + sex + alcohol + country, data = data.frame(ps_master.foods.clr@sam_data), family = binomial)
+output.pR.inflammation.countryInteraction <- glm(inflammation ~ smoke + age + sex + alcohol + country*pMR, data = data.frame(ps_master.foods.clr@sam_data), family = binomial)
+lrtest(output.pR.inflammation, output.pR.inflammation.countryInteraction)
+
+output.pR.metabolic_syndrome <- glm(metabolic_syndrome ~ pMR + smoke + age + sex + alcohol + country, data = data.frame(ps_master.foods.clr@sam_data), family = binomial) 
+output.pR.metabolic_syndrome.countryInteraction <- glm(metabolic_syndrome ~ smoke + age + sex + alcohol + country*pMR, data = data.frame(ps_master.foods.clr@sam_data), family = binomial) 
+lrtest(output.pR.metabolic_syndrome, output.pR.metabolic_syndrome.countryInteraction)
+```
+
+All likelihood ratio tests p-value > 0.05 therefore we move forward without country interactions
+```{r}
+exp(confint(output.pR.bp))
+exp(coefficients(output.pR.bp))
+summary(output.pR.bp)
+
+exp(confint(output.pR.inflammation))
+exp(coefficients(output.pR.inflammation))
+summary(output.pR.inflammation)
+
+exp(confint(output.pR.metabolic_syndrome))
+exp(coefficients(output.pR.metabolic_syndrome))
+summary(output.pR.metabolic_syndrome)
+```
+## Analyze relationship between dietary patterns and other variables
+### Figure 4A - Dietary patterns and BMI
+
+Assess dietary PC's association with BMI
+```{r fig.width= 8.5, fig.height = 4}
+output.pc.bmi.countryInteractions <- glm(bmi ~ PC1*country + PC2*country + smoke + alcohol + age + sex, data = data.frame(ps_master.foods.clr@sam_data), family = gaussian) 
+output.pc.bmi <- glm(bmi ~ PC1 + PC2 + smoke + alcohol + age + sex + country, data = data.frame(ps_master.foods.clr@sam_data), family = gaussian) 
+lrtest(output.pc.bmi.countryInteractions, output.pc.bmi)
+```
+Likelihood ratio test < 0.05 therefore we move forward with country interactions included
+```{r}
+# Get model coefficients and confidence intervals for plotting
+bmiConf <- output.pc.bmi.countryInteractions %>% 
+  confint()
+coefficientDf <- data.frame(summary(output.pc.bmi.countryInteractions)$coefficients)
+bmiModelDf <- data.frame(coefficient = coefficientDf$Estimate,pValue =coefficientDf$Pr...t.., bmiConf) %>% 
+  rownames_to_column(var = "modelVariable") %>% 
+  filter(modelVariable %in% c("PC1", "PC2", "PC1:countrySouth Africa", "PC1:countryUSA", "countrySouth Africa:PC2", "countryUSA:PC2")) 
+
+# Modify model variables to be clearer for plotting
+bmiModelDf <- bmiModelDf %>% 
+  mutate(modelVariable = case_when(modelVariable == "PC1:countrySouth Africa" ~ "PC1:South Africa",
+         modelVariable == "PC1:countryUSA" ~ "PC1:USA",
+         modelVariable == "countrySouth Africa:PC2" ~ "PC2:South Africa",
+         modelVariable == "countryUSA:PC2" ~ "PC2:USA",
+         TRUE ~ modelVariable))
+
+# Update model levels so they are plotted in the proper order
+bmiModelDf$modelVariable <- factor(bmiModelDf$modelVariable, levels = c("PC1", "PC1:South Africa", "PC1:USA", "PC2", "PC2:South Africa", "PC2:USA"))
+
+# Fix column names - confidence intervals with periods mess with ggplot
+colnames(bmiModelDf) <- c("modelVariable", "coefficient", "pValue", "confint.lower", "confint.upper")
+
+# round estimates
+bmiModelDf <- bmiModelDf %>% 
+  mutate(coefficient = round(coefficient, 2), pValue = round(pValue, 5), confint.lower = round(confint.lower, 2), confint.upper = round(confint.upper, 2), errorbarColor = ifelse(pValue < 0.05, ifelse(coefficient > 0, "darkred", "darkblue"), "black"), pointColor = ifelse(pValue < 0.05, ifelse(coefficient > 0, "red", "blue"), "black"))
+
+mainPlot <- ggplot(data = bmiModelDf, aes(y = fct_rev(modelVariable))) +
+  geom_errorbar(aes(xmin=confint.lower, xmax=confint.upper), width = 0.2,size  = 0.75, color = bmiModelDf$errorbarColor) +
+  geom_point(aes(x=coefficient), shape=16, size=3, color = bmiModelDf$pointColor) +
+  geom_vline(xintercept = 0, linetype="dashed") +
+  annotate("text", x = -.35, y = 6.4, label = "Reduced BMI", size = fontSize, fontface = "bold", hjust = 0.5) +
+  annotate("text", x = .375, y = 6.4, label = "Increased BMI", size = fontSize, fontface = "bold", hjust = 0.5) +
+  labs(x = "Coefficient") + 
+  theme_classic() +
+  theme(axis.line.y = element_blank(),
+        axis.ticks.y= element_blank(),
+        axis.text.y= element_blank(),
+        axis.title.y= element_blank(),
+        axis.text.x= element_text(size = fontSize*3),
+        axis.title.x= element_text(size = fontSize*3))
+
+# create annotation with numerical values for these variables
+p_left <- ggplot(data = bmiModelDf, aes(y = fct_rev(modelVariable))) +
+  geom_text(aes(x = 0.65, label = modelVariable), hjust = 0.5, size = fontSize) +
+  geom_text( aes(x = 2.4, label = paste0(coefficient, "(", confint.lower, ",", confint.upper,")")), hjust = 0.5, size = fontSize) +
+  geom_text(aes(x = 3.83,  label = round(pValue,3)), hjust = 0.5, size = fontSize) +
+  theme_void() +
+  coord_cartesian(xlim = c(0, 4)) + 
+  annotate("text", x = 0.65, y = 6.4, label = "FoodSeq Pattern", hjust = 0.5, fontface = "bold", size = fontSize) +
+  annotate("text", x = 2.4, y = 6.4, label = "Estimate (95% CI)", hjust = 0.5, fontface = "bold", size = fontSize) +
+  annotate("text", x = 3.83, y = 6.4, label = "p-value", hjust = 0.5, fontface = "bold", size = fontSize) 
+
+
+p_left + mainPlot 
+```
+
+Figure 4A - plot a condensed version of the forest plot above
+```{r}
+bmiModelDf_reduced <- bmiModelDf %>% 
+  filter(modelVariable %in% c("PC1", "PC2", "PC2:USA"))
+
+mainPlot <- ggplot(data = bmiModelDf_reduced, aes(y = fct_rev(modelVariable))) +
+  geom_errorbar(aes(xmin=confint.lower, xmax=confint.upper), width = 0.2,size  = 0.75, color = bmiModelDf_reduced$errorbarColor) +
+  geom_point(aes(x=coefficient), shape=16, size=3, color = bmiModelDf_reduced$pointColor) +
+  geom_vline(xintercept = 0, linetype="dashed") +
+  annotate("text", x = -.35, y = 3.4, label = "Reduced BMI", size = fontSize, fontface = "bold", hjust = 0.5) +
+  annotate("text", x = .375, y = 3.4, label = "Increased BMI", size = fontSize, fontface = "bold", hjust = 0.5) +
+  labs(x = "Coefficient") + 
+  theme_classic() +
+  theme(axis.line.y = element_blank(),
+        axis.ticks.y= element_blank(),
+        axis.text.y= element_blank(),
+        axis.title.y= element_blank(),
+        axis.text.x= element_text(size = fontSize*3),
+        axis.title.x= element_text(size = fontSize*3))
+
+# create annotation with numerical values for these variables
+p_left <- ggplot(data = bmiModelDf_reduced, aes(y = fct_rev(modelVariable))) +
+  geom_text(aes(x = 0.65, label = modelVariable), hjust = 0.5, size = fontSize) +
+  geom_text( aes(x = 2.4, label = paste0(coefficient, "(", confint.lower, ",", confint.upper,")")), hjust = 0.5, size = fontSize) +
+  geom_text(aes(x = 3.83,  label = round(pValue,3)), hjust = 0.5, size = fontSize) +
+  theme_void() +
+  coord_cartesian(xlim = c(0, 4)) + 
+  annotate("text", x = 0.65, y = 3.4, label = "FoodSeq Pattern", hjust = 0.5, fontface = "bold", size = fontSize) +
+  annotate("text", x = 2.4, y = 3.4, label = "Estimate (95% CI)", hjust = 0.5, fontface = "bold", size = fontSize) +
+  annotate("text", x = 3.83, y = 3.4, label = "p-value", hjust = 0.5, fontface = "bold", size = fontSize) 
+
+
+p_left + mainPlot 
+ggsave(file = here("Figures/Figure4A.pdf"), plot = (p_left + mainPlot ), dpi = 300, width = 8.5, height = 4)
+```
+
+### Extended Data Table 1 - Association between PCs and cardiometabolic disease
+```{r}
+output.pc.bp <- glm(hbp ~ PC1 + PC2 + smoke + age + sex + alcohol + country, data = data.frame(ps_master.foods.clr@sam_data), family = binomial)
+output.pc.bp.countryInteractions <- glm(hbp ~ PC1*country + PC2*country + smoke + age + sex + alcohol + country, data = data.frame(ps_master.foods.clr@sam_data), family = binomial)
+lrtest(output.pc.bp, output.pc.bp.countryInteractions) 
+
+output.pc.inflammation <- glm(inflammation ~ PC1 + PC2 + smoke + age + sex + alcohol + country, data = data.frame(ps_master.foods.clr@sam_data), family = binomial) 
+output.pc.inflammation.countryInteractions <- glm(inflammation ~ PC1*country + PC2*country + smoke + age + sex + alcohol + country, data = data.frame(ps_master.foods.clr@sam_data), family = binomial)
+lrtest(output.pc.inflammation, output.pc.inflammation.countryInteractions)
+
+output.pc.metabolic_syndrome <- glm(metabolic_syndrome ~ PC1 + PC2 + smoke + age + sex + alcohol + country, data = data.frame(ps_master.foods.clr@sam_data), family = binomial) 
+output.pc.metabolic_syndrome.countryInteractions <- glm(metabolic_syndrome ~ PC1*country + PC2*country + smoke + age + sex + alcohol + country, data = data.frame(ps_master.foods.clr@sam_data), family = binomial) 
+lrtest(output.pc.metabolic_syndrome, output.pc.metabolic_syndrome.countryInteractions)
+```
+
+Country interactions not significant in any models by likelihood ratio testing, so move forward without these interactions
+```{r}
+exp(confint(output.pc.bp))
+exp(coefficients(output.pc.bp))
+summary(output.pc.bp)
+
+exp(confint(output.pc.inflammation))
+exp(coefficients(output.pc.inflammation))
+summary(output.pc.inflammation)
+
+exp(confint(output.pc.metabolic_syndrome))
+exp(coefficients(output.pc.metabolic_syndrome))
+summary(output.pc.metabolic_syndrome)
+```
+
+
+## SCFA Analysis
+### Data preparation
+Combine data across cohorts
+```{r}
+# SCFA molecular weights
+mw_ba <- 88.11
+mw_aa <- 60.05
+mw_pa <- 74.08
+mw_va <- 102.13
+
+samdf_withSCFA <- ps_master.foods.clr@sam_data %>% 
+  data.frame() %>% 
+  # convert METS values based upon molecular weights
+  mutate(fecal_ba = case_when(!is.na(fecal_ba) ~ fecal_ba/mw_ba),
+         fecal_aa = case_when(!is.na(fecal_aa) ~fecal_aa/mw_aa),
+         fecal_pa = case_when(!is.na(fecal_pa) ~fecal_pa/mw_pa),
+         fecal_va = case_when(!is.na(fecal_va) ~fecal_va/mw_va)) %>% 
+  # calculate total scfa for METS
+  mutate(tot_fecal_scfa = case_when(!is.na(tot_fecal_scfa) ~ fecal_ba + fecal_aa + fecal_pa + fecal_va)) %>% 
+  # Calculate proportions of SCFAs in METS/ONR/CHOMP
+  mutate(propBut = case_when(!is.na(fecal_ba) ~fecal_ba/tot_fecal_scfa,
+                             !is.na(butyrate) ~butyrate/(butyrate+acetate+propionate+valerate)),
+         propAce = case_when(!is.na(fecal_aa) ~fecal_aa/tot_fecal_scfa,
+                             !is.na(acetate) ~acetate/(butyrate+acetate+propionate+valerate)),
+         propProp = case_when(!is.na(fecal_pa) ~fecal_pa/tot_fecal_scfa,
+                             !is.na(propionate) ~propionate/(butyrate+acetate+propionate+valerate)),
+         propVal = case_when(!is.na(fecal_va) ~fecal_va/tot_fecal_scfa,
+                             !is.na(valerate) ~valerate/(butyrate+acetate+propionate+valerate))
+         )
+
+metsSamples <- samdf_withSCFA %>% 
+  filter(study == "METS", !is.na(fecal_ba)) %>% 
+  select(PC1, PC2, pMR, age, sex, bmi, country, propBut, propAce, propProp, propVal, study, subj)
+
+
+# generate mean for each subject - CHOMP use only week 1 baseline samples (split on _ 2nd element is week); ONR week one only (sampleID ends in 1)
+onrSamples <- samdf_withSCFA %>% 
+  filter(study == "Durham Adult 1", !is.na(butyrate), substr(sampleID, nchar(sampleID), nchar(sampleID)) == "1") %>% 
+  group_by(subj) %>% 
+  summarize(PC1 = mean(PC1), PC2 = mean(PC2), pMR = mean(pMR),
+            age = age, sex = sex, bmi = bmi, country = country,
+            propBut = mean(propBut), propAce = mean(propAce), 
+            propProp = mean(propProp), propVal = mean(propVal), study = study) %>% 
+  data.frame()
+# remove duplicated rows
+onrSamples <- onrSamples[!duplicated(onrSamples$subj),]
+
+chompSamples <- samdf_withSCFA %>% 
+  filter(study == "Durham Adult 2", !is.na(butyrate), grepl("_1_", sampleID)) %>% 
+  group_by(subj) %>% 
+  summarize(PC1 = mean(PC1), PC2 = mean(PC2), pMR = mean(pMR),
+            age = age, sex = sex, bmi = bmi, country = country,
+            propBut = mean(propBut), propAce = mean(propAce), 
+            propProp = mean(propProp), propVal = mean(propVal), study = study) %>% 
+  data.frame()
+# remove duplicated rows
+chompSamples <- chompSamples[!duplicated(chompSamples$subj),]
+
+outputAllStudiesWithSCFAs <- rbind(metsSamples, onrSamples, chompSamples)
+outputAllStudiesWithSCFAs$country_study <- paste(outputAllStudiesWithSCFAs$country, outputAllStudiesWithSCFAs$study, sep = "_")
+```
+### Extended Data Table 2 - SCFA Models
+Build acetate models for PCs
+```{r}
+output.pc.acetate.countryInteractions <- glm(log(propAce) ~ PC1*country + PC2*country +  age + sex + bmi, 
+                                             data = outputAllStudiesWithSCFAs, family = gaussian)
+output.pc.acetate <- glm(log(propAce) ~ PC1 + PC2 +  age + sex + country + bmi, 
+                         data = outputAllStudiesWithSCFAs, family = gaussian)
+lrtest(output.pc.acetate.countryInteractions, output.pc.acetate)
+
+# LR test > 0.05 therefore use model without country effects
+summary(output.pc.acetate)
+confint(output.pc.acetate)
+```
+
+
+
+Build butyrate models for PCs
+```{r}
+output.pc.butyrate.countryInteractions <- glm(log(propBut) ~ PC1*country + PC2*country +  age + sex + bmi, 
+                                             data = outputAllStudiesWithSCFAs, family = gaussian)
+output.pc.butyrate <- glm(log(propBut) ~ PC1 + PC2 +  age + sex + country + bmi, 
+                         data = outputAllStudiesWithSCFAs, family = gaussian)
+lrtest(output.pc.butyrate.countryInteractions, output.pc.butyrate)
+
+# LR test < 0.05 therefore use model with country effects
+summary(output.pc.butyrate.countryInteractions)
+confint(output.pc.butyrate.countryInteractions)
+```
+
+Build propionate models for PCs
+```{r}
+output.pc.propionate.countryInteractions <- glm(log(propProp) ~ PC1*country + PC2*country +  age + sex + bmi, 
+                                             data = outputAllStudiesWithSCFAs, family = gaussian)
+output.pc.propionate <- glm(log(propProp) ~ PC1 + PC2 +  age + sex + country + bmi, 
+                         data = outputAllStudiesWithSCFAs, family = gaussian)
+lrtest(output.pc.propionate.countryInteractions, output.pc.propionate)
+
+# LR test < 0.05 therefore use model with country effects
+summary(output.pc.propionate.countryInteractions)
+confint(output.pc.propionate.countryInteractions)
+```
+
+Build valerate models for PCs
+```{r}
+output.pc.valerate.countryInteractions <- glm(log(propVal) ~ PC1*country + PC2*country +  age + sex + bmi, 
+                                             data = outputAllStudiesWithSCFAs, family = gaussian)
+output.pc.valerate <- glm(log(propVal) ~ PC1 + PC2 +  age + sex + country + bmi, 
+                         data = outputAllStudiesWithSCFAs, family = gaussian)
+lrtest(output.pc.valerate.countryInteractions, output.pc.valerate)
+
+# LR test < 0.05 therefore use model with country effects
+summary(output.pc.valerate.countryInteractions)
+confint(output.pc.valerate.countryInteractions)
+```
+
+Build acetate models for plant richness
+```{r}
+output.pR.acetate.countryInteractions <- glm(log(propAce) ~ pMR*country +  age + sex + bmi, 
+                                             data = outputAllStudiesWithSCFAs, family = gaussian)
+output.pR.acetate <- glm(log(propAce) ~ pMR +  age + sex + country + bmi, 
+                         data = outputAllStudiesWithSCFAs, family = gaussian)
+lrtest(output.pR.acetate.countryInteractions, output.pR.acetate)
+
+# LR test > 0.05 therefore use model without country effects
+summary(output.pR.acetate)
+confint(output.pR.acetate)
+```
+
+
+
+Build butyrate models for plant richness
+```{r}
+output.pR.butyrate.countryInteractions <- glm(log(propBut) ~ pMR*country +  age + sex + bmi, 
+                                             data = outputAllStudiesWithSCFAs, family = gaussian)
+output.pR.butyrate <- glm(log(propBut) ~ pMR +  age + sex + country + bmi, 
+                         data = outputAllStudiesWithSCFAs, family = gaussian)
+lrtest(output.pR.butyrate.countryInteractions, output.pR.butyrate)
+
+# LR test > 0.05 therefore use model without country effects
+summary(output.pR.butyrate)
+confint(output.pR.butyrate)
+```
+
+Build propionate models for plant richness
+```{r}
+output.pR.propionate.countryInteractions <- glm(log(propProp) ~ pMR*country +  age + sex + bmi, 
+                                             data = outputAllStudiesWithSCFAs, family = gaussian)
+output.pR.propionate <- glm(log(propProp) ~ pMR +  age + sex + country + bmi, 
+                         data = outputAllStudiesWithSCFAs, family = gaussian)
+lrtest(output.pR.propionate.countryInteractions, output.pR.propionate)
+
+# LR test > 0.05 therefore use model without country effects
+summary(output.pR.propionate)
+confint(output.pR.propionate)
+```
+
+Build valerate models for plant richness
+```{r}
+output.pR.valerate.countryInteractions <- glm(log(propVal) ~ pMR*country +  age + sex + bmi, 
+                                             data = outputAllStudiesWithSCFAs, family = gaussian)
+output.pR.valerate <- glm(log(propVal) ~ pMR +  age + sex + country + bmi, 
+                         data = outputAllStudiesWithSCFAs, family = gaussian)
+lrtest(output.pR.valerate.countryInteractions, output.pR.valerate)
+
+# LR test > 0.05 therefore use model without country effects
+summary(output.pR.valerate)
+confint(output.pR.valerate)
+```
+### Figure 4B - Association between PCs and SCFAs
+
+Plot the proportions of SCFAs with respect to dietary variables
+```{r}
+plotData <- outputAllStudiesWithSCFAs %>% 
+  select(country, study, pMR, PC1, PC2, subj, propBut, propAce, propProp, propVal) %>%
+  mutate(Butyrate = propBut, Propionate = propProp, Acetate = propAce, Valerate = propVal) %>% 
+  select(-propBut, -propAce, -propProp, -propVal) %>% 
+  melt(id.vars = c("country", "study", "pMR", "PC1", "PC2", "subj"))
+
+plotData$variable <- factor(plotData$variable, levels = c("Acetate", "Propionate", "Butyrate", "Valerate"))
+
+p1 <- ggplot(plotData, aes(x = PC1, y = value*100)) + 
+  geom_point(aes(color = variable), alpha = 0.2) + 
+  geom_smooth(aes(color = variable), method = "lm") +  
+  theme_classic() + 
+  theme(legend.position = "none") + 
+  labs(y = "% of Total Short Chain Fatty Acids")
+p2 <- ggplot(plotData, aes(x = PC2, y = value*100, color = variable)) + 
+  geom_point(aes(color = variable),alpha = 0.2) + 
+  geom_smooth(aes(color = variable), method = "lm") +  
+  theme_classic() + 
+  theme(legend.position = "none") + 
+  labs(y = "")
+p3 <- ggplot(plotData, aes(x = pMR, y = value*100)) + 
+  geom_point(aes(color = variable),alpha = 0.2, show.legend = F) + 
+  geom_smooth(aes(color = variable), method = "lm") + 
+  theme_classic() + 
+  labs(y = "", color = "", x = "Plant Richness")
+
+p1+p2+p3
+
+ggsave(p1+p2+p3, file = here("Figures/Figure4B.pdf"), width = 10, height = 5)
+```
+
+### Determine odds of different dietary pattern by country
+```{r}
+# Break samples up into distinct dietary pattern clusters
+starchyThreshold <- quantile(data.frame(ps_master.foods.clr@sam_data)$PC1, probs = c(0,0.25,0.5,0.75,1))["75%"]
+
+dietClassificationData <- data.frame(ps_master.foods.clr@sam_data) %>% 
+  mutate(dietClass = case_when(
+    PC2 > 0 & PC1 < 0 ~ "SaladBowl",
+    PC1 > starchyThreshold ~ "Starchy",
+    TRUE ~ "Other"),
+  saladBowlClass = case_when(dietClass == "SaladBowl" ~ "SaladBowl",
+                           TRUE ~ "Other"),
+  domestic = case_when(
+    country == "USA" ~ "Domestic",
+    TRUE ~ "International")) %>% 
+  select(dietClass, domestic, saladBowlClass, country)
+
+dietClassificationData$domestic <- factor(dietClassificationData$domestic, levels = c("International", "Domestic"))
+
+# Calculate odds ratio for 'Salad Bowl' diet (Americans vs Non-Americans)
+model <- glm(factor(saladBowlClass) ~ domestic, data = dietClassificationData, family = "binomial" )
+
+summary_model <- summary(model)
+odds_ratio_class <- exp(coef(model)["domesticDomestic"])
+confint_class <- exp(confint(model))
+
+cat("Odds ratio for domestic samples:",  odds_ratio_class, "(", confint_class["domesticDomestic",1],",",  confint_class["domesticDomestic",2],")", "\n")
+
+```

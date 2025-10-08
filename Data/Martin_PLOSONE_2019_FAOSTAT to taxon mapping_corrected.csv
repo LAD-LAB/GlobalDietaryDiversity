@@ -1,0 +1,375 @@
+﻿FAO commodity group,FAO group code,Family,Corrected Species,Original Species,Authority,Notes
+Agave fibres nes,800,Asparagaceae,Agave americana,Agave americana,L.,
+Agave fibres nes,800,Asparagaceae,Agave angustifolia,Agave angustifolia,Haw.,FAO lists this as Agave letonae F.W.Taylor ex Trel. Which is a snynonym for a variety of A. angustifolia
+Agave fibres nes,800,Asparagaceae,Agave cantala,Agave cantala,Roxb.,
+Agave fibres nes,800,Asparagaceae,Agave fourcroydes,Agave fourcroydes,Lemaire,
+Agave fibres nes,800,Asparagaceae,Agave lecheguilla,Agave lecheguilla,Torr.,
+Agave fibres nes,800,Asparagaceae,Furcraea foetida,Furcraea foetida,(L.) Haw. ,FAO lists this as synonym Agave foetida
+"Almonds, with shell",221,Rosaceae,Prunus dulcis,Prunus dulcis,(Mill.) D.A. Webb ,"FAO lists P. amygdalus, P. communis, and Amygdalus communis, but these are all synonyms for P. dulcis (as per USDA)"
+"Anise, badian, fennel, coriander",711,Apiaceae,Carum carvi ,Carum carvi ,L.,
+"Anise, badian, fennel, coriander",711,Apiaceae,Coriandrum sativum ,Coriandrum sativum ,L.,
+"Anise, badian, fennel, coriander",711,Apiaceae,Cuminum cyminum ,Cuminum cyminum ,L.,
+"Anise, badian, fennel, coriander",711,Apiaceae,Foeniculum vulgare ,Foeniculum vulgare ,Mill.,
+"Anise, badian, fennel, coriander",711,Schisandraceae,Illicium verum,Illicium verum,Hook. f.,
+"Anise, badian, fennel, coriander",711,Cupressaceae,Juniperus communis,Juniperus communis,L.,
+"Anise, badian, fennel, coriander",711,Apiaceae,Pimpinella anisum ,Pimpinella anisum ,L.,
+Apples,515,Rosaceae,Malus domestica,Malus pumila,Mill.,"FAO also lists Malus communis, which is a synonym for this species"
+Apples,515,Rosaceae,Malus sylvestris,Malus sylvestris,(L.) Mill. ,"FAO also lists Pyrus malus, which is a synonym for this species"
+Apricots,526,Rosaceae,Prunus armeniaca,Prunus armeniaca,L.,
+Areca nuts,226,Arecaceae,Areca catechu,Areca catechu,L.,
+Artichokes,366,Asteraceae,Cynara cardunculus,Cynara cardunculus var. scolymus,L.,
+Asparagus,367,Asparagaceae,Asparagus officinalis,Asparagus officinalis,L.,
+Avocados,572,Lauraceae,Persea americana,Persea americana,Mill.,
+Bambara beans,203,Fabaceae,Vigna subterranea,Vigna subterranea,(L.) Verdc.,
+Bananas,486,Musaceae,Musa acuminata,Musa acuminata,Colla,"FAO lists M. sapientum, which is a synonym for a hybrid between M. acuminata and M. balbisiana; FAO also lists M. cavendishii which is a synonym for M. acuminata"
+Bananas,486,Musaceae,Musa balbisiana,Musa balbisiana,Colla,
+Bananas,486,Musaceae,Musa acuminata,Musa nana,"Parham, non Lour. ",
+Barley,44,Poaceae,Hordeum vulgare,Hordeum disticum,L.,
+Barley,44,Poaceae,Hordeum vulgare,Hordeum hexasticum,L.,
+Barley,44,Poaceae,Hordeum vulgare,Hordeum vulgare,L.,
+"Bastfibres, other",782,Malvaceae,Abroma augusta ,Abroma augusta ,(L.) L. f. ,
+"Bastfibres, other",782,Malvaceae,Abutilon theophrasti,Abutilon avicennae ,Medik.,
+"Bastfibres, other",782,Fabaceae,Crotalaria juncea,Crotalaria juncea,L.,
+"Bastfibres, other",782,Malvaceae,Hibiscus cannabinus ,Hibiscus cannabinus ,L.,
+"Bastfibres, other",782,Malvaceae,Hibiscus sabdariffa ,Hibiscus sabdariffa ,L.,
+"Bastfibres, other",782,Malvaceae,Urena lobata,Urena lobata,L.,
+"Bastfibres, other",782,Malvaceae,Urena lobata,Urena sinuata ,L.,
+"Beans, dry",176,Fabaceae,Phaseolus coccineus ,Phaseolus coccineus ,L.,
+"Beans, dry",176,Fabaceae,Phaseolus lunatus ,Phaseolus lunatus ,L.,
+"Beans, dry",176,Fabaceae,Phaseolus vulgaris ,Phaseolus vulgaris ,L.,
+"Beans, dry",176,Fabaceae,Vigna aconitifolia,Vigna aconitifolia,(Jacq.) Marechal ,
+"Beans, dry",176,Fabaceae,Vigna aconitifolia,Vigna aconitifolia,(Jacq.) Marechal ,"Previously Phaselous aconitifolius or P. aconitifolia (which are both listed by FAO, but have been removed here)"
+"Beans, dry",176,Fabaceae,Vigna angularis,Vigna angularis,(Willd.) Ohwi & Ohashi ,
+"Beans, dry",176,Fabaceae,Vigna mungo,Vigna mungo,(L.) Hepper ,"Previously Phaselous mungo (which is listed by FAO, but has been removed here)"
+"Beans, dry",176,Fabaceae,Vigna radiata ,Vigna radiata ,(L.) R. Wilczek ,"Same as Phaselous aureus (which is listed by FAO, but has been removed here)"
+"Beans, dry",176,Fabaceae,Vigna umbellata,Vigna umbellata,(Thunb.) Ohwi & H. Ohashi ,"Previously Phaselous calcaratus (which is listed by FAO, but has been removed here)"
+"Beans, green",414,Fabaceae,Phaseolus coccineus ,Phaseolus coccineus ,L.,"FAO only lists Phaseolus spp. and Vigna spp. in this commodity group; however, since it appears to be very similar to the commodity group 176, the species from that group are ascribed to this group (414) as well "
+"Beans, green",414,Fabaceae,Phaseolus lunatus ,Phaseolus lunatus ,L.,
+"Beans, green",414,Fabaceae,Phaseolus vulgaris ,Phaseolus vulgaris ,L.,
+"Beans, green",414,Fabaceae,Vigna aconitifolia,Vigna aconitifolia,(Jacq.) Marechal ,
+"Beans, green",414,Fabaceae,Vigna aconitifolia,Vigna aconitifolia,(Jacq.) Marechal ,
+"Beans, green",414,Fabaceae,Vigna angularis,Vigna angularis,(Willd.) Ohwi & Ohashi ,
+"Beans, green",414,Fabaceae,Vigna mungo,Vigna mungo,(L.) Hepper ,
+"Beans, green",414,Fabaceae,Vigna radiata ,Vigna radiata ,(L.) R. Wilczek ,
+"Beans, green",414,Fabaceae,Vigna umbellata,Vigna umbellata,(Thunb.) Ohwi & H. Ohashi ,
+Berries nes,558,Ericaceae,Gaylussacia baccata,Gaylussacia baccata,(Wangenh.) K. Koch ,FAO cites only Gaylussacia spp. for huckleberry and dangleberry; this species corresponds to the most common (black) huckleberry
+Berries nes,558,Ericaceae,Gaylussacia frondosa,Gaylussacia frondosa,(L.) Torr. & A. Gray ex Torr. ,FAO cites only Gaylussacia spp. for huckleberry and dangleberry; this species corresponds to dangleberry
+Berries nes,558,Moraceae,Morus alba,Morus alba,L.,
+Berries nes,558,Moraceae,Morus nigra ,Morus nigra ,L.,
+Berries nes,558,Moraceae,Morus rubra,Morus rubra,L.,
+Berries nes,558,Myrtaceae,Myrtus communis ,Myrtus communis ,L.,
+Blueberries,552,Ericaceae,Vaccinium corymbosum,Vaccinium corymbosum,L.,
+Blueberries,552,Ericaceae,Vaccinium myrtillus,Vaccinium myrtillus,L.,
+"Brazil nuts, with shell",216,Lecythidaceae,Bertholletia excelsa,Bertholletia excelsa,Humb. & Bonpl. ,
+"Broad beans, horse beans, dry",181,Fabaceae,Vicia faba,Vicia faba,L.,FAO also lists several varieties
+Buckwheat,89,Polygonaceae,Fagopyrum esculentum,Fagopyrum esculentum,Moench,
+Cabbages and other brassicas,358,Brassicaceae,Brassica oleracea,Brassica oleracea,L.,FAO notes this entails all varieties except B. botrytis
+Cabbages and other brassicas,358,Brassicaceae,Brassica rapa,Brassica rapa,L.,FAO lists this as B. chihensis which is a synonym for a subspecies of B. rapa
+Canary seed,101,Poaceae,Phalaris canariensis,Phalaris canariensis,L.,
+Carobs,461,Fabaceae,Ceratonia siliqua,Ceratonia siliqua,L.,
+Carrots and turnips,426,Apiaceae,Daucus carota,Daucus carota subsp. sativus,Hoffm. ,
+"Cashew nuts, with shell",217,Anacardiaceae,Anacardium occidentale,Anacardium occidentale,L.,
+Cashewapple,591,Anacardiaceae,Anacardium occidentale,Anacardium occidentale,L.,
+Cassava,125,Euphorbiaceae,Manihot esculenta ,Manihot esculenta ,Crantz,"FAO also lists M. dulcis and M. utilissima as separate species, but they appear to be synonyms"
+Cassava,125,Euphorbiaceae,Manihot palmata,Manihot palmata,Müll.Arg.,
+Cassava leaves,378,Euphorbiaceae,Manihot esculenta ,Manihot esculenta ,Crantz,"FAO also lists M. utilissima as separate species, but they appear to be synonyms"
+Castor oil seed,265,Euphorbiaceae,Ricinus communis,Ricinus communis,L.,
+Cauliflowers and broccoli,393,Brassicaceae,Brassica oleracea,Brassica oleracea,L. ,"FAO lists B. oleracea var. botrytis, and subvarieties cauliflora and cymosa"
+"Cereals, nes",108,Amaranthaceae,Amaranthus caudatus ,Amaranthus caudatus ,L.,
+"Cereals, nes",108,Chenopodiaceae,Chenopodium pallidicaule ,Chenopodium pallidicaule ,Aellen,
+"Cereals, nes",108,Poaceae,Coix lacryma-jobi ,Coix lacryma jobi ,L.,
+"Cereals, nes",108,Poaceae,Eragrostis tef,Eragrostis abyssinica,(Jacq.) Link,Synonym is Eragrostis tef (Zuccagni) Trotter
+"Cereals, nes",108,Poaceae,Zizania aquatica ,Zizania aquatica ,L.,
+Cherries,531,Rosaceae,Prunus avium,Prunus avium,(L.) L.,"Synonym is Cerasus avium (listed on FAO reference set as a separate species, so not included here); also listed are varieties juliana and duracina"
+"Cherries, sour",530,Rosaceae,Prunus cerasus,Prunus cerasus,L.,"FAO lists Cerasus acida, but C. acida is commonly listed as a synonym for P. avium (e.g. in FAO group number 531). Removed from this FAO group"
+Chestnut,220,Fagaceae,Castanea sativa,Castanea sativa,Mill. ,"FAO also lists Castanea vesca Gaertn. and C. vulgaris as species, but these are synonym for C. sativa so are not included here"
+Chick peas,191,Fabaceae,Cicer arietinum,Cicer arientinum,L.,
+Chicory roots,459,Asteraceae,Cichorium intybus,Cichorium intybus var. sativum,(Bisch.) Janch.,"FAO lists C. sativum and C. intybus as separate species, but these species are C. intybus var. sativum (a variety bred explicitly for roots)"
+"Chillies and peppers, dry",689,Solanaceae,Capsicum annuum ,Capsicum annuum ,L.,"FAO lists C. frutescens as a separate species, but it is a synonym for C. annuum var. annuum so is removed here"
+"Chillies and peppers, dry",689,Myrtaceae,Pimenta dioica,Pimenta officinalis,Lindl.,
+"Chillies and peppers, green",401,Solanaceae,Capsicum annuum ,Capsicum annuum ,L.,"FAO lists C. frutescens as a separate species, but it is a synonym for C. annuum var. annuum so is removed here"
+"Chillies and peppers, green",401,Myrtaceae,Pimenta officinalis,Pimenta officinalis,Lindl.,
+Cinnamon (canella),693,Lauraceae,Cinnamomum cassia,Cinnamomum cassia,Nees ex Blume,Common synonym is C. aromaticum Nees
+Cinnamon (canella),693,Lauraceae,Cinnamomum verum,Cinnamomum verum,J. Presl ,FAO lists C. zeylanicum but this appears to be a less commonly used synonym for C. verum
+Cloves,698,Myrtaceae,Syzygium aromaticum,Syzygium aromaticum,(L.) Merr. & L.M. Perry ,"FAO lists E. caryophyllata and C. aromaticus as species, but these are synonyms for S. aromaticum so are not included here"
+"Cocoa, beans",661,Malvaceae,Theobroma cacao,Theobroma cacao,L.,
+Coconuts,249,Arecaceae,Cocos nucifera,Cocos nucifera,L.,
+"Coffee, green",656,Rubiaceae,Coffea arabica,Coffea arabica,L.,
+"Coffee, green",656,Rubiaceae,Coffea canephora,Coffea canephora,Pierre ex Froehner ,FAO lists C. robusta but this is a synonym for C. canephora so is removed here
+"Coffee, green",656,Rubiaceae,Coffea liberica,Coffea liberica,W. Bull ex Hiern. ,
+Coir,813,Arecaceae,Cocos nucifera,Cocos nucifera,L.,
+"Cow peas, dry",195,Fabaceae,Vigna unguiculata,Vigna unguiculata,(L.) Walp. ,"FAO lists V. sinensis, but this is a synonym for a subspecies of V. ungiculata so is not included here. FAO also lists Dolichos sinensis, but this is a synonym for a subspecies of V. ungiculata so is not included here"
+Cranberries,554,Ericaceae,Vaccinium macrocarpon,Vaccinium macrocarpon,Aiton,
+Cranberries,554,Ericaceae,Vaccinium oxycoccos,Vaccinium oxycoccus,L. ,
+Cucumbers and gherkins,397,Cucurbitaceae,Cucumis sativus,Cucumis sativus,L.,
+Currants,550,Grossulariaceae,Ribes nigrum,Ribes nigrum,L.,
+Currants,550,Grossulariaceae,Ribes rubrum,Ribes rubrum,L.,
+Dates,577,Arecaceae,Phoenix dactylifera,Phoenix dactylifera,L.,
+Eggplants (aubergines),399,Solanaceae,Solanum melongena,Solanum melongena,L.,
+Fibre crops nes,821,Asparagaceae,Furcraea foetida,Furcraea gigantea ,(L.) Haw. ,
+Fibre crops nes,821,Asparagaceae,Furcraea macrophylla ,Furcraea macrophylla ,Baker,
+Fibre crops nes,821,Poaceae,Lygeum spartum,Lygeum spartum,Loefl. ex L. ,
+Fibre crops nes,821,Bromeliaceae,Neoglaziovia variegata ,Neoglaziovia variegata ,(Arruda da Camara) Mez,
+Fibre crops nes,821,Xanthorrhoeaceae,Phormium tenax,Phormium tenax,J.R. Forst. & G. Forst. ,
+Fibre crops nes,821,Asparagaceae,Samuela carnerosana,Samuela carnerosana,auct. non Trel.,Important synonym is Yucca faxoniana (Trel.) Sarg.
+Fibre crops nes,821,Asparagaceae,Sansevieria spp,Sansevieria spp,Thunb.,FAO does not list species here
+Fibre crops nes,821,Poaceae,Stipa tenacissima ,Stipa tenacissima ,L.,
+Figs,569,Moraceae,Ficus carica,Ficus carica,L.,
+Flax fibre and tow,773,Linaceae,Linum usitatissimum,Linum usitatissimum,L.,"FAO does not list any species for this group, so this taxonomy represents flax"
+Fonio,94,Poaceae,Digitaria exilis,Digitaria exilis,(Kippist) Stapf ,
+Fonio,94,Poaceae,Digitaria iburua,Digitaria iburua,Stapf,
+"Fruit, citrus nes",512,Rutaceae,Citrus aurantium,Citrus bergamia ,Risso & Poit.,Synonyms are Citrus x aurantium L. subsp. bergamia (Risso & Poit.) Wight & Arn. ex Engl. 
+"Fruit, citrus nes",512,Rutaceae,Citrus medica,Citrus medica,L.,FAO lists this is Citrus medica var. cedrata
+"Fruit, citrus nes",512,Rutaceae,Citrus myrtifolia ,Citrus myrtifolia ,Raf.,Not listed on USDA taxonomy checker
+"Fruit, citrus nes",512,Rutaceae,Citrus japonica,Fortunella japonica,(Thunb.) Swingle ,
+"Fruit, fresh nes",619,Ericaceae,Arbutus unedo,Arbutus unedo,L.,
+"Fruit, fresh nes",619,Annonaceae,Asimina triloba ,Asimina triloba ,(L.) Dunal ,
+"Fruit, fresh nes",619,Rosaceae,Crataegus azarolus ,Crataegus azarolus ,L.,
+"Fruit, fresh nes",619,Rosaceae,Eriobotrya japonica ,Eriobotrya japonica ,(Thunb.) Lindl. ,
+"Fruit, fresh nes",619,Sapindaceae,Litchi chinensis,Litchi chinensis,Sonn.,FAO lists Nephelium litchi Cambess. which is a synonym for L. chihensis
+"Fruit, fresh nes",619,Rosaceae,Mespilus germanica ,Mespilus germanica ,L.,
+"Fruit, fresh nes",619,Cactaceae,Opuntia ficus-indica ,Opuntia ficus-indica ,(L.) Mill. ,
+"Fruit, fresh nes",619,Lythraceae,Punica granatum,Punica granatum,L.,
+"Fruit, fresh nes",619,Rosaceae,Rosa spp,Rosa spp,L.,
+"Fruit, fresh nes",619,Caprifoliaceae,Sambucus nigra ,Sambucus nigra ,L.,
+"Fruit, fresh nes",619,Rosaceae,Sorbus aucuparia ,Sorbus aucuparia ,L.,
+"Fruit, fresh nes",619,Rosaceae,Sorbus domestica ,Sorbus domestica ,L.,
+"Fruit, fresh nes",619,Fabaceae,Tamarindus indica ,Tamarindus indica ,L.,
+"Fruit, fresh nes",619,Caricaceae,Vasconcellea x heilbornii,Vasconcellea x heilbornii,(V.M.Badillo) V.M.Badillo,FAO lists this as Carica pentagona
+"Fruit, fresh nes",619,Rhamnaceae,Ziziphus jujuba,Zizyphus zizyphus,L. (Karst.),FAO lists this as Zizyphus jujuba Mill. (synonym)
+"Fruit, pome nes",542,NA,NA,NA,NA,"FAO does not list any specific taxonomy with this group (""Other pome fruit not separately identified. In some countries apples, pears and quinces are reported under this general category."")"
+"Fruit, stone nes",541,NA,NA,NA,NA,"FAO does not list any specific taxonomy with this group: (""Other stone fruit not separately identified. In some countries, apricots, cherries, peaches, nectarines and plums are reported under this general category."")"
+"Fruit, tropical fresh nes",603,Annonaceae,Annona cherimola,Annona cherimola,Mill.,"FAO lists this species simply as ""Annona spp."", but then lists ""cherimoya"" as the corresponding product (which corresponds to this species as per USDA)"
+"Fruit, tropical fresh nes",603,Annonaceae,Annona reticulata,Annona reticulata,L.,"FAO lists this species under ""Annona spp."", but then lists ""custard apple"" as the corresponding product (which corresponds to this species as per USDA)"
+"Fruit, tropical fresh nes",603,Moraceae,Artocarpus altilis,Artocarpus altilis,(Parkinson) Fosberg ,FAO lists this as Artocarpus incise which is a synonym for this species
+"Fruit, tropical fresh nes",603,Moraceae,Artocarpus heterophyllus,Artocarpus heterophyllus,Lam.,FAO lists the synonym Artocarpus integrifolius auct.
+"Fruit, tropical fresh nes",603,Oxalidaceae,Averrhoa carambola,Averrhoa carambola,L.,
+"Fruit, tropical fresh nes",603,Sapotaceae,Calocarpum mammosum,Calocarpum mammosum,(L.) P. Royen ,
+"Fruit, tropical fresh nes",603,Sapotaceae,Chrysophyllum cainito,Chrysophyllum cainito,L.,"FAO lists this simply as ""Chrusophyllum spp"", but this secies corresponds to the ""star apple"" and ""cainito"" commonodies that are listed"
+"Fruit, tropical fresh nes",603,Sapindaceae,Dimocarpus longan,Dimocarpus longan,Lour.,FAO lists the synonym Nephelium longan (Lour.) Hook.
+"Fruit, tropical fresh nes",603,Malvaceae,Durio zibethinus,Durio zibethinus,Murray,
+"Fruit, tropical fresh nes",603,Myrtaceae,Acca sellowiana,Feijoa sellowiana ,(O. Berg) O. Berg ,
+"Fruit, tropical fresh nes",603,Clusiaceae,Garcinia mangostana,Garcinia mangostana,L.,
+"Fruit, tropical fresh nes",603,Clusiaceae,Mammea americana,Mammea americana,L.,
+"Fruit, tropical fresh nes",603,Sapotaceae,Manilkara zapota,Manilkara zapota,(L.) P. Royen ,FAO lists the synonym Achras zapota L.
+"Fruit, tropical fresh nes",603,Sapindaceae,Nephelium lappaceum,Nephelium lappaceum,L.,
+"Fruit, tropical fresh nes",603,Passifloraceae,Passiflora edulis,Passiflora edulis,Sims,
+"Fruit, tropical fresh nes",603,Anacardiaceae,Prunus umbellata,Prunus umbellata,Elliot,"FAO lists this species simply under ""Spondias spp, but then lists ""hog plum"" as the corresponding products"
+"Fruit, tropical fresh nes",603,Myrtaceae,Psidium guajava,Psidium guajava,L.,
+"Fruit, tropical fresh nes",603,Solanaceae,Solanum quitoense,Solanum quitoense,Lam.,
+"Fruit, tropical fresh nes",603,Anacardiaceae,Spondias mombin,Spondias mombin,L.,"FAO lists this species as Spondias spp, but then lists ""mombin"" as the corresponding product."
+"Fruit, tropical fresh nes",603,Anacardiaceae,Spondias purpurea,Spondias purpurea,L.,"FAO lists this species simply under Spondias spp, but then lists ""mombin"" as the corresponding products."
+Garlic,406,Liliaceae,Allium sativum,Allium sativum,L.,
+Ginger,720,Zingiberaceae,Zingiber officinale,Zingiber officinale,Roscoe,
+Gooseberries,549,Grossulariaceae,Ribes uva-crispa,Ribes uva-crispa,L.,FAO lists the synonym Ribes grossularia L.
+"Grain, mixed",103,NA,NA,NA,NA,"FAO indicates this includes ""A mixture of cereal species that are sown and harvested together. It does not include: meslin (a mixture wheat/rye)."""
+Grapefruit (inc. pomelos),507,Rutaceae,Citrus maxima,Citrus maxima,(Burm. f.) Merr. ,"FAO also lists Citrus grandis (L.) Osbeck, but this is a synonym for C. maxima"
+Grapefruit (inc. pomelos),507,Rutaceae,Citrus x paradisi,Citrus x paradisi,Macfad.,FAO lists this as Citrus paradisi
+Grapes,560,Vitaceae,Vitis vinifera,Vitis vinifera,L.,
+"Groundnuts, with shell",242,Fabaceae,Arachis hypogaea,Arachis hypogaea,L.,
+"Hazelnuts, with shell",225,Betulaceae,Corylus avellana,Corylus avellana,L.,
+Hemp tow waste,777,Cannabaceae,Cannabis sativa,Canabis sativa,L.,
+Hempseed,336,Cannabaceae,Cannabis sativa,Canabis sativa,L.,
+Hops,677,Cannabaceae,Humulus lupulus,Humulus lupulus,L.,
+Jojoba seed,277,Simmondsiaceae,Simmondsia chinensis,Simmondsia chinensis,(Link) C. K. Schneid.,FAO also lists the synonym Simmondsia californica Nutt.
+Jute,780,Malvaceae,Corchorus capsularis,Corchorus capsularis,L.,
+Jute,780,Malvaceae,Corchorus olitorius,Corchorus olitorius,L.,
+Kapok fruit,310,Malvaceae,Ceiba pentandra,Ceiba pendantra,(L.) Gaertn.,
+Karite nuts (sheanuts),263,Sapotaceae,Vitellaria paradoxa,Vitellaria paradoxa,C.F. Gaertn.,FAO lists the synonym Butyrospermum parkii (G. Don) Kotschy
+Kiwi fruit,592,Actinidiaceae,Actinidia deliciosa,Actinidia deliciosa,C.F.Liang & A.R.Ferguson,
+Kola nuts,224,Malvaceae,Cola acuminata,Cola acuminata,(P. Beauv.) Schott & Endl. ,
+Kola nuts,224,Malvaceae,Cola nitida,Cola nitida,(Vent.) A. Chev. ,FAO also lists the synonym Cola vera K.Schum
+"Leeks, other alliaceous vegetables",407,Liliaceae,Allium porrum,Allium porrum,L.,
+"Leeks, other alliaceous vegetables",407,Liliaceae,Allium schoenoprasum,Allium schoenoprasum,L.,
+Lemons and limes,497,Rutaceae,Citrus aurantiifolia,Citrus x aurantiifolia,(Christm.) Swingle,FAO lists the synonym Citrus aurantiifolia (Christm.) Swingle
+Lemons and limes,497,Rutaceae,Citrus limon,Citrus limetta,Risso,
+Lemons and limes,497,Rutaceae,Citrus limon,Citrus x limon,(L.) Burm.f.,FAO lists the synonym Citrus limon (L.) Burm. f.
+Lentils,201,Fabaceae,Lens culinaris,Lens culinaris,Medikus,FAO lists synonyms Lens esculenta Moench and Ervum lens L.
+Lettuce and chicory,372,Asteraceae,Cichorium endivia,Cichorium endivia,L.,FAO lists Cichorium endivia var. crispa and Cichorium endivia var. latifolia
+Lettuce and chicory,372,Asteraceae,Cichorium intybus,Cichorium intybus,L.,FAO lists synonym Cichorium intybus var. foliosum 
+Lettuce and chicory,372,Asteraceae,Lactuca sativa,Lactuca sativa,L.,
+Linseed,333,Linaceae,Linum usitatissimum,Linum usitatissimum,L.,
+Lupins,210,Fabaceae,Lupinus spp,Lupinus spp,NA,"FAO does not list any species; USDA recognizes over 50 species in the genus (all of which have common names that include ""lupin"")'"
+Maize,56,Poaceae,Zea mays,Zea mays,L.,
+"Maize, green",446,Poaceae,Zea mays,Zea mays,L.,"FAO lists this as Zea mays, particularly var. saccharata"
+"Mangoes, mangosteens, guavas",571,Anacardiaceae,Mangifera indica,Mangifera indica,L.,
+Manila fibre (abaca),809,Musaceae,Musa textilis,Musa textilis,Née,
+Mate,671,Aquifoliaceae,Ilex paraguariensis,Ilex paraguariensis,A. St. Hil.,
+"Melons, other (inc.cantaloupes)",568,Cucurbitaceae,Cucumis melo,Cucumis melo,L.,
+Melonseed,299,Cucurbitaceae,Cucumis melo,Cucumis melo,L.,
+Millet,79,Poaceae,Echinochloa frumentacea,Echinochloa esculenta,(A. Braun) H. Scholz ,"FAO lists this species as ""Japanese millet"", with the following taxonomy: Echinocloa frumentacea. However, this species is not acknowledged by USDA, and E. esculenta is widely regarded as Japanese millet (although not listed explicitly by FAO, it is included here)"
+Millet,79,Poaceae,Eleusine coracana ,Eleusine coracana ,(L.) Gaertn. ,
+Millet,79,Poaceae,Panicum miliaceum,Panicum miliaceum,L.,
+Millet,79,Poaceae,Paspalum scrobiculatum ,Paspalum scrobiculatum ,L.,
+Millet,79,Poaceae,Pennisetum glaucum,Pennisetum glaucum,(L.) R. Br. ,
+Millet,79,Poaceae,Setaria italica,Setaria italica,(L.) P. Beauv. ,
+Mushrooms and truffles,449,Agaricaceae,Agaricus bisporus,Agaricus bisporus,(J.E.Lange) Imbach,
+Mushrooms and truffles,449,Agaricaceae,Agaricus campestris,Agaricus campestris,L.,
+Mushrooms and truffles,449,Boletaceae,Boletus edulis ,Boletus edulis ,Bull. (1782),
+Mushrooms and truffles,449,Morchellaceae,Morchella spp,Morchella spp,(L.) Pers. ,
+Mushrooms and truffles,449,Toberaceae,Tuber magnatum,Tuber magnatum,P.Micheli ex F.H.Wigg.,
+Mustard seed,292,Brassicaceae,Brassica nigra,Brassica nigra,(L.) W.D.J. Koch ,FAO also lists the synonym Sinapis nigra L.
+Mustard seed,292,Brassicaceae,Sinapis alba,Sinapis alba,L.,"FAO also lists the synonyms Brassica alba Rabenh., non L. and Brassica hirta Moench"
+"Nutmeg, mace and cardamoms",702,Zingiberaceae,Aframomum angustifolium,Aframomum angustifolium,Sonn.,This taxonomy is very confusing; synonym includes Amomum angustifolium
+"Nutmeg, mace and cardamoms",702,Zingiberaceae,Aframomum melegueta,Aframomum melegueta,Schum.,"FAO also lists in this group Aframomum hambury, but information on this species cannot be found"
+"Nutmeg, mace and cardamoms",702,Zingiberaceae,Amomum aromaticum,Amomum aromaticum,Roxb.,
+"Nutmeg, mace and cardamoms",702,Zingiberaceae,Elettaria cardamomum,Elettaria cardamomum,(L.) Maton ,FAO also lists synonym Amomum cardamomum L.
+"Nutmeg, mace and cardamoms",702,Myristicaceae,Myristica fragrans,Myristica fragrans,Houtt. ,
+"Nuts, nes",234,Burseraceae,Canarium album,Canarium album,(Lour.) Rausch. ,FAO lists this (and other Canarium species) as Canarium spp. But this species corresponds to the FAO commodity (Chinese olives)
+"Nuts, nes",234,Burseraceae,Canarium indicum,Canarium indicum,L.,FAO lists this (and other Canarium species) as simply Canarium spp. But this species corresponds to the FAO commodity Java almond)
+"Nuts, nes",234,Burseraceae,Canarium ovatum,Canarium ovatum,Engl.,FAO lists this (and other Canarium species) as simply Canarium spp. But this species corresponds to the FAO commodity (pili nut)
+"Nuts, nes",234,Burseraceae,Canarium pimela,Canarium pimela,Konig,FAO lists this (and other Canarium species) as simply Canarium spp. But this species corresponds to the FAO commodity (Chinese olives)
+"Nuts, nes",234,Juglandaceae,Carya illinoinensis,Carya illinoinensis,(Wangenh.) K. Koch ,
+"Nuts, nes",234,Caryocaraceae,Caryocar nuciferum ,Caryocar nuciferum ,L.,
+"Nuts, nes",234,Lecythidaceae,Lecythis zabucajo ,Lecythis zabucajo ,Aubl.,
+"Nuts, nes",234,Proteaceae,Macadamia ternifolia ,Macadamia ternifolia ,Maiden & Betche ,
+"Nuts, nes",234,Pinaceae,Pinus pinea,Pinus pinea,L.,
+Oats,75,Poaceae,Avena sativa,Avena sativa,L.,"FAO also lists Avena spp., but this may correspond to ~ 15 other species as per USDA"
+"Oil, palm fruit",254,Arecaceae,Elaeis guineensis,Elais guineensis,Jacq. ,
+Oilseeds nes,339,Euphorbiaceae,Aleurites moluccanus ,Aleurites moluccanus ,(L.) Willd. ,"FAO lists the synonym Aleurites moluccana (L.) Willd., orth. var."
+Oilseeds nes,339,Arecaceae,Astrocaryum aculeatum,Astrocaryum aculeatum,G. Mey.,"FAO lists this only as Astrocaryum spp.; USDA does not recognize this genus, however, FAO lists this item as ""tukuma kernel"", which corresponds with A. aculeatum"
+Oilseeds nes,339,Meliaceae,Carapa guianensis ,Carapa guianensis ,Aubl.,
+Oilseeds nes,339,Euphorbiaceae,Croton tiglium ,Croton tiglium ,L.,
+Oilseeds nes,339,Fagaceae,Fagus sylvatica ,Fagus sylvatica ,L.,
+Oilseeds nes,339,Asteraceae,Guizotia abyssinica ,Guizotia abyssinica ,(L. f.) Cass. ,
+Oilseeds nes,339,Euphorbiaceae,Jatropha curcas ,Jatropha curcas ,L.,
+Oilseeds nes,339,Chrysobalanaceae,Licania rigida ,Licania rigida ,Benth.,
+Oilseeds nes,339,Sapotaceae,Madhuca indica,Madhuca indica,J.F. Gmel. ,FAO lists the synonym Bassia latifolia Roxb.
+Oilseeds nes,339,Lamiaceae,Perilla frutescens ,Perilla frutescens ,(L.) Britton ,
+Oilseeds nes,339,Fabaceae,Pongamia glabra ,Pongamia glabra ,(L.) Panigrahi ,FAO lists the synonym Pongamia glabra Vent.
+Oilseeds nes,339,Dipterocarpaceae,Shorea robusta ,Shorea robusta ,C.F. Gaertn. ,
+Okra,430,Malvaceae,Abelmoschus esculentus,Abelmoschus esculentus,(L.) Moench,FAO also lists synonym Hibiscus esculentus L.
+Olives,260,Oleaceae,Olea europaea,Olea europaea,L.,
+"Onions, dry",403,Liliaceae,Allium cepa,Allium cepa,L.,
+"Onions, shallots, green",402,Liliaceae,Allium cepa,Allium ascalonicum,L.,"While USDA recognizes this taxon, it may be a synonym for Allium cepa L. var. aggregatum G. Don (as per the US National Germplasm database)"
+"Onions, shallots, green",402,Liliaceae,Allium cepa,Allium cepa,L.,
+"Onions, shallots, green",402,Liliaceae,Allium fistulosum,Allium fistulosum,L.,
+Oranges,490,Rutaceae,Citrus aurantium,Citrus x aurantium,L.,FAO lists this as Citrus aurantium
+Oranges,490,Rutaceae,Citrus sinensis,Citrus x sinensis,(L.) Osbeck,FAO lists this as Citrus sinensis
+Papayas,600,Caricaceae,Carica papaya,Carica papaya,L.,
+Peaches and nectarines,534,Rosaceae,Prunus persica,Prunus persica,Batsch ,"FAO also lists synonym Amygdalus persica L. Note however, this is technically a synonym for a variety of P. persica (var. persica); FAO also lists synonym Persica laevis"
+Pears,521,Rosaceae,Pyrus communis,Pyrus communis,L.,
+"Peas, dry",187,Fabaceae,Pisum sativum,Pisum sativum,L.,FAO also lists synonym Pisum arvense L.
+"Peas, green",417,Fabaceae,Pisum sativum,Pisum sativum,L.,FAO does not list any synonyms for this group (unlike group 187)
+Pepper (piper spp.),687,Piperaceae,Piper longum,Piper longum,L.,
+Pepper (piper spp.),687,Piperaceae,Piper nigrum,Piper nigrum,L.,
+Peppermint,748,Lamiaceae,Mentha spicata,Mentha spicata,L.,"FAO only lists Metha spp., however, since this commodity group is called ""peppermint, spearmint"", this species is added as spearmint as per USDA taxonomy"
+Peppermint,748,Lamiaceae,Mentha x piperita,Mentha x piperita,Willd.,
+Persimmons,587,Ebenaceae,Diospyros kaki,Diospyros kaki,L. f. ,
+Persimmons,587,Ebenaceae,Diospyros virginiana,Diospyros virginiana,L.,
+Pigeon peas,197,Fabaceae,Cajanus cajan,Cajanus cajan,(L.) Millsp.,
+Pineapples,574,Bromeliaceae,Ananas comosus,Ananas comosus,(L.) Merr.,FAO also lists synonym Ananas sativus
+Pistachios,223,Anacardiaceae,Pistacia vera,Pistacia vera,L.,
+Plantains,489,Musaceae,Musa x paradisiaca,Musa x paradisiaca,L.,FAO lists this as Musa paradisiaca
+Plums and sloes,536,Rosaceae,Prunus domestica,Prunus domestica,L.,
+Plums and sloes,536,Rosaceae,Prunus spinosa,Prunus spinosa,L.,
+Poppy seed,296,Papaveraceae,Papaver somniferum,Papaver somniferum,L.,
+Potatoes,116,Solanaceae,Solanum tuberosum,Solanum tuberosum,L.,
+"Pulses, nes",211,Fabaceae,Canavalia ensiformis ,Canavalia ensiformis ,(L.) DC. ,"FAO lists this as Canavalia spp. with the common names ""jack or sword bean""; this species refers to ""jack bean"" as per USDA"
+"Pulses, nes",211,Fabaceae,Canavalia gladiata,Canavalia gladiata,(Jacq.) DC. ,"FAO lists this as Canavalia spp. with the common names ""jack or sword bean""; this species refers to ""sword bean"" as per USDA"
+"Pulses, nes",211,Fabaceae,Cyamopsis tetragonoloba ,Cyamopsis tetragonoloba ,(L.) Taubert ,
+"Pulses, nes",211,Fabaceae,Lablab purpureus,Lablab purpureus,L.,"FAO lists this as Dolichos spp. with the common names hyacinth or lablab; this common term seems to refer to this species listed here (which is recognized by USDA, technically as Lablab purpureus subsp. purpureus)"
+"Pulses, nes",211,Fabaceae,Mucuna pruriens,Mucuna pruriens,(L.) DC.,"FAO lists this as Stizolobium spp. or ""velvet bean"", which is a synonym for two different varieties of the species listed here"
+"Pulses, nes",211,Fabaceae,Pachyrhizus erosus,Pachyrhizus erosus,(L.) Urb. ,
+"Pulses, nes",211,Fabaceae,Psophocarpus tetragonolobus ,Psophocarpus tetragonolobus ,(L.) DC. ,
+"Pumpkins, squash and gourds",394,Cucurbitaceae,Cucurbita pepo,Cucurbita pepo,L.,"FAO lists this as Cucurbita spp. but all major cultivated pumpkins, squahses and gourds are varieties of this species"
+"Pyrethrum, dried",754,Asteraceae,Chrysanthemum cinerariifolium,Chrysanthemum cinerariifolium,(Trevir.) Vis. ,
+Quinces,523,Rosaceae,Chaenomeles japonica,Chaenomeles japonica,(Thunb.) Lindl. ex Spach ,FAO lists synonym Cydonia japonica (Thunb.) Pers.
+Quinces,523,Rosaceae,Cydonia oblonga,Cydonia oblonga,Mill.,FAO also lists synonym Cydonia vulgaris Pers.
+Quinoa,92,Amaranthaceae,Chenopodium quinoa,Chenopodium quinoa,Willd.,
+Ramie,788,Urticaceae,Boehmeria nivea,Boehmeria nivea,(L.) Gaudich.,FAO also lists synonym/ possibly subspecies Boehmeria tenacissima Gaudich.
+Rapeseed,270,Brassicaceae,Brassica napus,Brassica napus,L.,
+Raspberries,547,Rosaceae,Rubus idaeus,Rubus idaeus,L.,
+"Rice, paddy",27,Poaceae,Oryza glaberrima,Oryza glaberrima,Steud. ,"FAO lists this simply as Oryza spp., however, this is the only other cultivated rice species"
+"Rice, paddy",27,Poaceae,Oryza sativa,Oryza sativa,L.,
+"Roots and tubers, nes",149,Apiaceae,Arracacia xanthorrhiza ,Arracacia xanthorrhiza ,E.N. Bancroft ,FAO lists this as Arracacoa xanthorrhiza but this is a misspelling
+"Roots and tubers, nes",149,Cyperaceae,Cyperus esculentus ,Cyperus esculentus ,L.,
+"Roots and tubers, nes",149,Asteraceae,Helianthus tuberosus,Helianthus tuberosus,L.,
+"Roots and tubers, nes",149,Marantaceae,Maranta arundinacea ,Maranta arundinacea ,L.,
+"Roots and tubers, nes",149,Arecaceae,Metroxylon sagu,Metroxylon sagu,Rottb.,"FAO only lists Metroxylon spp. but the corresponding commodity is sago palm, which corresponds with this species (as per USDA)"
+"Roots and tubers, nes",149,Oxalidaceae,Oxalis tuberosa ,Oxalis tuberosa ,Molina,
+"Roots and tubers, nes",149,Fabaceae,Pachyrhizus erosus,Pachyrhizus erosus,(L.) Urb. ,FAO also lists the synonym Pachyrhizus angulatus Rich. ex DC.
+"Roots and tubers, nes",149,Tropaeolaceae,Tropaeolum tuberosum ,Tropaeolum tuberosum ,Ruiz & Pav. ,
+"Roots and tubers, nes",149,Basellaceae,Ullucus tuberosus ,Ullucus tuberosus ,Loz.,
+"Rubber, natural",836,Euphorbiaceae,Hevea brasiliensis,Hevea brasiliensis,(Willd. ex A. Juss.) Müll. Arg. ,
+Rye,71,Poaceae,Secale cereale,Secale cereale,L.,
+Safflower seed,280,Asteraceae,Carthamus tinctorius,Carthamus tinctorius,L.,
+Seed cotton,328,Malvaceae,Gossypium arboreum,Gossypium arboreum,L.,"FAO lists only Gossypium spp.; note, G. herbaceum is cited as a cultivated cotton species, but USDA recognizes this as a synonym for a variety of G. hirsutum"
+Seed cotton,328,Malvaceae,Gossypium barbadense,Gossypium barbadense,L.,"FAO lists only Gossypium spp.; note, G. herbaceum is cited as a cultivated cotton species, but USDA recognizes this as a synonym for a variety of G. hirsutum"
+Seed cotton,328,Malvaceae,Gossypium hirsutum,Gossypium hirsutum,L.,"FAO lists only Gossypium spp.; note, G. herbaceum is cited as a cultivated cotton species, but USDA recognizes this as a synonym for a variety of G. hirsutum"
+Sesame seed,289,Pedaliaceae,Sesamum indicum,Sesamum orientale,L.,FAO lists synonym Sesamum indicum L.
+Sisal,789,Asparagaceae,Agave sisalana,Agave sisalana,Perrine,
+Sorghum,83,Poaceae,Sorghum bicolor,Sorghum bicolor,(L.) Moench,"FAO lists S. guineense, S. vulgare, and S. dura, but these are synonyms for subspecies of S. bicolor (as per USDA)"
+Soybeans,236,Fabaceae,Glycine max,Glycine max,(L.) Merr.,"FAO lists synonym Glycine soja (L.) Merr., non Siebold & Zucc., nom. illeg."
+"Spices, nes",723,Apiaceae,Anethum graveolens ,Anethum graveolens ,L.,
+"Spices, nes",723,Iridaceae,Crocus sativus ,Crocus sativus ,L.,
+"Spices, nes",723,Zingiberaceae,Curcuma longa,Curcuma longa,L.,
+"Spices, nes",723,Lauraceae,Laurus nobilis ,Laurus nobilis ,L.,
+"Spices, nes",723,Lamiaceae,Thymus vulgaris ,Thymus vulgaris ,L.,
+"Spices, nes",723,Fabaceae,Trigonella foenum-graecum ,Trigonella foenum graecum ,L.,
+Spinach,373,Amaranthaceae,Spinacia oleracea,Spinacia oleracea,L.,
+Strawberries,544,Rosaceae,Fragaria x ananassa,Fragaria x ananassa,Duchesne,FAO lists this only as Fragaria spp.
+String beans,423,Fabaceae,Phaseolus vulgaris,Phaseolus vulgaris,L.,
+Sugar beet,157,Amaranthaceae,Beta vulgaris,Beta vulgaris,L.,FAO lists the variety Beta vulgaris var. altissima
+Sugar cane,156,Poaceae,Saccharum officinarum,Saccharum officinarum,L.,
+"Sugar crops, nes",161,Sapindaceae,Acer saccharum,Acer saccharum,Marshall,
+"Sugar crops, nes",161,Arecaceae,Arenga pinnata,Arenga saccharifera,(Wurmb) Merr. ,
+"Sugar crops, nes",161,Poaceae,Sorghum bicolor,Sorghum bicolor,(L.) Moench ,"FAO lists Sorghum saccharatum (L.) Moench, nom. utique rej., which is a synonym for the subspecies Sorghum bicolor (L.) Moench subsp. Bicolor"
+Sunflower seed,267,Asteraceae,Helianthus annuus,Helianthus annuus,L.,
+Sweet potatoes,122,Convolvulaceae,Ipomoea batatas,Ipomoea batatas,(L.) Lam.,
+Tallowtree seed,305,Dipterocarpaceae,Shorea aptera,Shorea aptera,Burck,This name appears to be unresolved; synonym includes S. palembanica Miq. which is also unresolved
+Tallowtree seed,305,Dipterocarpaceae,Shorea stenocarpa,Shorea stenocarpa,unknown,This name does not appear in any taxonomic databases
+Tallowtree seed,305,Euphorbiaceae,Triadica sebifera,Triadica sebifera,(L.) Small,FAO lists the synonym Sapium sebiferum (L.) Roxb. and Stillingia sebifera
+"Tangerines, mandarins, clementines, satsumas",495,Rutaceae,Citrus reticulata,Citrus reticulata,Blanco,"FAO also lists Citrus unshiu, however the USDA recognizes this as a subspecies of C. reticulata"
+Taro (cocoyam),136,Araceae,Colocasia esculenta,Colocasia esculenta,(L.) Schott,
+Tea,667,Theaceae,Camellia sinensis,Camellia sinensis,(L.) Kuntze,FAO also lists Thea sinensis L. and Thea assamica J. W. Masters; but the USDA recognizes these are both synonyms for varieties of Camellia sinensis (L.) Kuntze (var. sinensis).
+"Tobacco, unmanufactured",826,Solanaceae,Nicotiana tabacum,Nicotiana tabacum,L.,
+Tomatoes,388,Solanaceae,Solanum lycopersicum,Solanum lycopersicum,L.,FAO lists Lycopersicon esculentum Mill. Which is a synonym for a variety of S. lycopersicon 
+Triticale,97,Poaceae,X Triticosecale,X Triticosecale,Wittm. ex A. Camus.,FAO does not list any taxa; this is a hybrid at the genus level with no species identity
+Tung nuts,275,Euphorbiaceae,Vernicia fordii,Vernicia fordii,(Hemsl.) Airy Shaw,FAO lists synonym Aleurites fordii Hemsl.
+Tung nuts,275,Euphorbiaceae,Vernicia montana,Vernicia montana,Lour. ,"FAO lists synonym Aleurites cordata auct. non (Thunb.) R. Br. ex Steud., orth. var."
+Vanilla,692,Orchidaceae,Vanilla planifolia,Vanilla planifolia,Jacks.,
+Vanilla,692,Orchidaceae,Vanilla pompona,Vanilla pompona,Schiede,
+"Vegetables, fresh nes",463,Apiaceae,Anthriscus cerefolium ,Anthriscus cerefolium ,(L.) Hoffm. ,
+"Vegetables, fresh nes",463,Apiaceae,Apium graveolens ,Apium graveolens ,L.,
+"Vegetables, fresh nes",463,Asteraceae,Artemisia dracunculus ,Artemisia dracunculus ,L.,
+"Vegetables, fresh nes",463,Poaceae,Bambusa blumeana,Bambusa blumeana,Schult. f. ,FAO only lists this as Bambusa spp.; but these are the most common harvested species
+"Vegetables, fresh nes",463,Poaceae,Bambusa odashimae,Bambusa odashimae,Hatus. ex D.Z.Li & Stapleton,FAO only lists this as Bambusa spp.; but these are the most common harvested species
+"Vegetables, fresh nes",463,Poaceae,Bambusa oldhamii,Bambusa oldhamii,W. Munro [excluded] ,FAO only lists this as Bambusa spp.; but these are the most common harvested species
+"Vegetables, fresh nes",463,Amaranthaceae,Beta vulgaris,Beta vulgaris,L.,
+"Vegetables, fresh nes",463,Brassicaceae,Brassica oleracea,Brassica oleracea,L.,"FAO cites this as B. napus, but then ascribes this as ruttabagga/ swedes; however B. napus is rape seed"
+"Vegetables, fresh nes",463,Capparaceae,Capparis spinosa ,Capparis spinosa ,L.,
+"Vegetables, fresh nes",463,Brassicaceae,Armoracia rusticana,Cochlearia armoracia ,"G. Gaertn., B. Mey. & Scherb.",
+"Vegetables, fresh nes",463,Asteraceae,Cynara cardunculus ,Cynara cardunculus ,L.,
+"Vegetables, fresh nes",463,Poaceae,Fargesia spathacea,Fargesia spathacea,Franch.,FAO only lists this as Bambusa spp.; but these are the most common harvested species
+"Vegetables, fresh nes",463,Apiaceae,Foeniculum vulgare ,Foeniculum vulgare ,Mill.,
+"Vegetables, fresh nes",463,Brassicaceae,Lepidium sativum ,Lepidium sativum ,L.,
+"Vegetables, fresh nes",463,Lamiaceae,Origanum majorana,Majorana hortensis ,L.,
+"Vegetables, fresh nes",463,Brassicaceae,Nasturtium officinale,Nasturtium officinale,W.T. Aiton,
+"Vegetables, fresh nes",463,Apiaceae,Pastinaca sativa ,Pastinaca sativa ,L.,
+"Vegetables, fresh nes",463,Apiaceae,Petroselinum crispum ,Petroselinum crispum ,(Mill.) Nyman ex A.W. Hill ,
+"Vegetables, fresh nes",463,Poaceae,Phyllostachys bambusoides,Phyllostachys bambusoides,Siebold & Zucc. ,FAO only lists this as Bambusa spp.; but these are the most common harvested species
+"Vegetables, fresh nes",463,Poaceae,Phyllostachys edulis,Phyllostachys edulis,(Carrière) J. Houz. ,FAO only lists this as Bambusa spp.; but these are the most common harvested species
+"Vegetables, fresh nes",463,Brassicaceae,Raphanus sativus,Raphanus sativu ,L.,
+"Vegetables, fresh nes",463,Polygonaceae,Rheum rhabarbarum,Rheum rhabarbarum,L.,"FAO lists only Rheum spp., and notes it represents rhubarb"
+"Vegetables, fresh nes",463,Polygonaceae,Rumex acetosa ,Rumex acetosa ,L.,
+"Vegetables, fresh nes",463,Lamiaceae,Satureja hortensis ,Satureja hortensis ,L.,
+"Vegetables, fresh nes",463,Asteraceae,Scorzonera hispanica ,Scorzonera hispanica ,L.,
+"Vegetables, fresh nes",463,Poaceae,Sinocalamus latiflorus,Sinocalamus latiflorus,(Munro) McClure ,FAO only lists this as Bambusa spp.; but these are the most common harvested species
+"Vegetables, fresh nes",463,Asteraceae,Tragopogon porrifolius ,Tragopogon porrifolius ,L.,
+"Vegetables, leguminous nes",420,Fabaceae,Vicia faba,Vicia faba,L.,
+Vetches,205,Fabaceae,Vicia sativa,Vicia sativa,L.,
+"Walnuts, with shell",222,Juglandaceae,Juglans regia,Juglans regia,L.,FAO has this misspelled as Juglands regia
+Watermelons,567,Cucurbitaceae,Citrullus lanatus,Citrullus lanatus,(Thunb.) Matsum. & Nakai,FAO lists Citrullus vulgaris Schrad. which is a synonym for a subspecies of C. lanatus
+Wheat,15,Poaceae,Triticum aestivum,Triticum aestivum,L.,
+Wheat,15,Poaceae,Triticum turgidum,Triticum durum,Desf.,
+Wheat,15,Poaceae,Triticum spelta,Triticum spelta,L.,
+Yams,137,Dioscoreaceae,Dioscorea alata,Dioscorea alata,L.,"FAO lists only Dioscorea spp. but the species below are those identified as the most important commercially cultivated species, which are then cross-checked with USDA."
+Yams,137,Dioscoreaceae,Dioscorea bulbifera,Dioscorea bulbifera,L.,
+Yams,137,Dioscoreaceae,Dioscorea cayenensis,Dioscorea cayenensis,Lam.,
+Yams,137,Dioscoreaceae,Dioscorea dumetorum,Dioscorea dumetorum,(Kunth) Pax ,
+Yams,137,Dioscoreaceae,Dioscorea esculenta,Dioscorea esculenta,(Lour.) Burkill ,
+Yams,137,Dioscoreaceae,Dioscorea oppositifolia,Dioscorea polystachya,Turcz.,USDA lists this as the synonym Dioscorea oppositifolia L.
+Yams,137,Dioscoreaceae,Dioscorea rotundata,Dioscorea rotundata,Poir.,
+Yams,137,Dioscoreaceae,Dioscorea trifida,Dioscorea trifida,L. f. ,
+Yautia (cocoyam),135,Araceae,Xanthosoma sagittifolium,Xanthosoma sagittifolium,(L.) Schott,FAO lists Xanthosoma spp.

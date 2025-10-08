@@ -1,0 +1,367 @@
+---
+title: "Figure 2"
+output: pdf_document
+---
+Load the relevant packages
+```{r}
+library(here)
+library(tidyverse)
+library(reshape2)
+library(phyloseq)
+library(vegan)
+library(patchwork)
+library(ggridges)
+library(ggpubfigs)
+library(ggpubr)
+```
+
+
+# Preprocessing
+Load in and preprocess the phyloseq object
+```{r}
+ps_master.foods <- readRDS(here("Data/20250929_master_trnL_ps_glommed.rds"))
+ps_master.foods.ra <- readRDS(here("Data/20250929_master_trnL_ps_glommed_ra.rds"))
+ps_master.foods.clr <- readRDS(here("Data/20250929_master_trnL_ps_glommed_clr.rds"))
+```
+
+# Analysis
+## PERMANOVA
+Determine impact of country of origin on trnL composition
+```{r}
+trnL_dist_1 <- as.data.frame(as.matrix(phyloseq::distance(ps_master.foods.clr, method = "euclidean")))
+out_country <- adonis2(trnL_dist_1 ~ country, data = data.frame(ps_master.foods.clr@sam_data),  permutations=1000)
+out_country
+```
+
+## Identify Dietary Patterns
+### Create PCA
+Identify dietary patterns across global samples
+```{r }
+# pull out sample data frame from ps object
+samdf <- data.frame(ps_master.foods.clr@sam_data) %>% 
+  rownames_to_column(var = 'linkingName')
+
+# PCA
+pca <- prcomp(ps_master.foods.clr@otu_table, center = TRUE, scale = FALSE)
+
+pca.df <- data.frame(pca$x) %>% 
+        rownames_to_column(var = 'linkingName')
+
+# % variance explained
+eigs <- pca$sdev^2
+varExplained <- 100 * round(eigs/sum(eigs), 5)
+
+# pull out first 2 PC's variance explained for the plot
+ve.pc1 <- as.character(round(varExplained[1], 3))
+ve.pc2 <- as.character(round(varExplained[2], 3))
+
+# Add back sample data
+globalPCA <- left_join(pca.df, samdf, by = "linkingName")
+
+# Calculate plotting limits based on largest value observed in PC axes 1 and 2
+limit <- max(abs(globalPCA[, c('PC1', 'PC2')])) +
+          0.05*(max(abs(globalPCA[, c('PC1', 'PC2')])))
+
+# Create the base PCA plot
+pca.plot <- ggplot(globalPCA, aes_string(x = "PC1", y = "PC2", color = "country")) +
+  geom_point(size = 2.5, alpha = 0.3) +
+  labs(x = "", y = "") + 
+  xlim(-limit, limit) + 
+  ylim(-limit, limit) +
+  theme_classic() +
+  theme(axis.line = element_line(size = 1, color = 'black'),
+        axis.ticks = element_line(color = 'black'),
+        axis.title = element_text(size = 14, face = 'bold', color = 'black'),
+        axis.text = element_text(size = 10, face = 'bold', color = 'black'),
+        legend.background = element_blank(),
+        legend.title = element_blank()) +
+  scale_color_manual(values = friendly_pal("bright_seven"))
+
+pca.plot
+```
+
+Store the PCA values for future analyses in all phyloseq objects
+```{r}
+# Get top 2 PCs
+pca.df.top2 <- pca.df %>%
+  select(linkingName, PC1, PC2)
+
+samdf <- ps_master.foods %>%
+  sample_data() %>%
+  data.frame() %>% 
+  rownames_to_column(var = "linkingName") %>% 
+  left_join(pca.df.top2, by = "linkingName") %>% 
+  column_to_rownames(var = "linkingName")
+sample_data(ps_master.foods) <- sample_data(samdf)
+
+samdf <- ps_master.foods.clr %>%
+  sample_data() %>%
+  data.frame() %>% 
+  rownames_to_column(var = "linkingName") %>% 
+  left_join(pca.df.top2, by = "linkingName") %>% 
+  column_to_rownames(var = "linkingName")
+sample_data(ps_master.foods.clr) <- sample_data(samdf)
+  
+samdf <- ps_master.foods.ra %>%
+  sample_data() %>%
+  data.frame() %>% 
+  rownames_to_column(var = "linkingName") %>% 
+  left_join(pca.df.top2, by = "linkingName") %>% 
+  column_to_rownames(var = "linkingName")
+sample_data(ps_master.foods.ra) <- sample_data(samdf)
+
+# Store phyloseq with PCA data - this will be used in subsequent figures + analyses
+saveRDS(ps_master.foods, here("Data/20250929_master_trnL_ps_glommed_withPCs.rds"))
+saveRDS(ps_master.foods.clr, here("Data/20250929_master_trnL_ps_glommed_clr_withPCs.rds"))
+saveRDS(ps_master.foods.ra, here("Data/20250929_master_trnL_ps_glommed_ra_withPCs.rds"))
+```
+
+
+### Create PCA biplot
+Create a biplot
+```{r}
+# Calculate loadings
+V <- pca$rotation # Eigenvectors
+L <- diag(pca$sdev) # Diag mtx w/sqrts of eigenvalues on diag.
+loadings <- V %*% L
+
+# Get loadings for first 2 PCs and format for plotting
+pythag <- function(a, b){sqrt(a^2 + b^2)}
+loadings.n <- data.frame(loadings[, 1:2]) %>%
+     dplyr::rename(PC1 = X1, PC2 = X2) %>%
+     mutate(PC1 = PC1*2, PC2 = PC2 * 2) %>% 
+     mutate(variable = row.names(loadings)) %>%
+     mutate(length = pythag(PC1, PC2), slope = PC2/PC1, ang = atan(slope)*(180/pi))
+
+nTaxa <- 15
+loadings.plot <- top_n(loadings.n, nTaxa, wt = length)
+
+# Rename loadings with lowest taxonomic level
+loadings.taxtab <- tax_table(ps_master.foods.clr)[row.names(loadings.plot)] %>%
+     data.frame()
+loadings.taxtab <- loadings.taxtab[cbind(1:nrow(loadings.taxtab), max.col(!is.na(loadings.taxtab), ties.method = 'last'))] %>%
+  data.frame()
+colnames(loadings.taxtab) <- c("name")
+loadings.taxtab$asv <- tax_table(ps_master.foods.clr)[row.names(loadings.plot)] %>%
+  data.frame() %>%
+  rownames()
+
+
+loadings.plot <- loadings.taxtab %>%
+     select(asv,name) %>%
+     right_join(loadings.plot, by = c('asv' = 'variable'))
+
+# What quadrant of the plot is the label in?
+q1 <- filter(loadings.plot, PC1 > 0 & PC2 > 0)
+q2 <- filter(loadings.plot, PC1 < 0 & PC2 > 0)
+q3 <- filter(loadings.plot, PC1 < 0 & PC2 < 0)
+q4 <- filter(loadings.plot, PC1 > 0 & PC2 < 0)
+
+# Create the PCA biplot
+pca.biplot <-
+     pca.plot +
+     geom_segment(data = loadings.plot,
+                  aes(x = 0, y = 0,
+                      xend = PC1, yend = PC2),
+                  color = 'black',
+                  arrow = arrow(angle = 15,
+                                length = unit(0.1, 'inches'))) +
+  labs(color = "Country") + 
+  theme(legend.position = "none")
+
+# Then add geom_text quadrant-by-quadrant, aligning text accordingly
+     if (dim(q1)[1] != 0) {
+          pca.biplot <- pca.biplot +
+               geom_text(data = q1, aes(x = PC1, y = PC2, hjust = 0, angle = ang,
+                                        label=paste0('   ', name),
+                                        fontface = 'bold'),
+                         color = 'black', show.legend = FALSE)
+     }
+     if (dim(q2)[1] != 0) {
+          pca.biplot <- pca.biplot +
+               geom_text(data = q2, aes(x = PC1, y = PC2, hjust = 1, angle = ang,
+                                        label=paste0(name, '   '),
+                                        fontface = 'bold'),
+                         color = 'black', show.legend = FALSE)
+     }
+     if (dim(q3)[1] != 0) {
+          pca.biplot <- pca.biplot +
+               geom_text(data = q3, aes(x = PC1, y = PC2, hjust = 1, angle = ang,
+                                        label=paste0(name, '   '),
+                                        fontface = 'bold'),
+                         color = 'black', show.legend = FALSE)
+     }
+     if (dim(q4)[1] != 0) {
+          pca.biplot <- pca.biplot +
+               geom_text(data = q4, aes(x = PC1, y = PC2, hjust = 0, angle = ang,
+                                        label=paste0('   ', name),
+                                        fontface = 'bold'),
+                         color = 'black', show.legend = FALSE)
+     }
+
+pca.biplot
+```
+
+
+### Visualize PCA factor loadings
+Visualize the top PCA factor loadings - these will be used in Figure 2
+```{r}
+# Pull loadings from top 2 PCs
+loadings.top <- data.frame(loadings[, 1:2])
+
+# Save factor loadings for use in Figure 3
+saveRDS(loadings[,2], here("Data/pc2Loadings.rds"))
+
+# alter rownames to be taxa names
+rownames(loadings.top) <- ps_master.foods.clr@tax_table[rownames(loadings.top), "name"]
+
+# Shift data around so that we can plot it more easily
+plotData_factorLoadings <- loadings.top %>%  
+  t() %>%  
+  data.frame()
+colnames(plotData_factorLoadings) <- rownames(loadings.top)
+plotData_factorLoadings <- data.frame(plotData_factorLoadings) %>% 
+  rownames_to_column(var = "PC")
+plotData_factorLoadings_PC1 <- plotData_factorLoadings[1,-1]
+plotData_factorLoadings_PC2 <- plotData_factorLoadings[2,-1]
+
+
+# remove factors below a threshold - 0.7 is a common strict threshold that is used here. This displays a suitable, not overwhelming number of taxa in this case.
+thresholdForLoadings <- 0.7
+plotData_factorLoadings_PC1 <- plotData_factorLoadings_PC1[,abs(plotData_factorLoadings_PC1)>thresholdForLoadings]
+plotData_factorLoadings_PC2 <- plotData_factorLoadings_PC2[,abs(plotData_factorLoadings_PC2)>thresholdForLoadings]
+
+
+# Plot the top factor loadings for each PC
+loadingsPC1 <- ggplot(melt(plotData_factorLoadings_PC1), aes(x = reorder(variable, value), y = value)) +
+  geom_bar(stat = "identity",
+           show.legend = FALSE,
+           aes(fill = value),
+           color = "gray30") +
+  theme_classic() + 
+  xlab("Group") +
+  ylab("Value") +
+  coord_flip() +
+  scale_fill_gradient2(low = "#F4A460",
+                       mid = "aliceblue",
+                       high = "#6495ED") +
+  labs(x = "", y = "PC1 Factor Loading") +
+  geom_text(aes(label = variable)) +
+  theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(), axis.line.y = element_blank())
+
+loadingsPC2 <- ggplot(melt(plotData_factorLoadings_PC2), aes(x = reorder(variable, value), y = value)) +
+  geom_bar(stat = "identity",
+           show.legend = FALSE,
+           aes(fill = value),
+           color = "gray30") +
+  theme_classic() + 
+  xlab("Group") +
+  ylab("Value") +
+  coord_flip() +
+  scale_fill_gradient2(low = "#F4A460",
+                       mid = "aliceblue",
+                       high = "#6495ED") +
+  labs(x = "", y = "PC2 Factor Loading") +
+  geom_text(aes(label = variable)) +
+  theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(), axis.line.y = element_blank())
+
+loadingsPC1
+loadingsPC2
+```
+
+### Visualize country distribution along PCs
+
+``` {r}
+# Compute the mean of PC1 for each level
+mean_PC1 <- aggregate(PC1 ~ country, data = globalPCA, mean)
+
+# Order levels by the mean value of PC1
+ordered_levels <- mean_PC1$country[order(mean_PC1$PC1)]
+
+# Create a new factor, ordered by the mean PC1
+globalPCA$ordered_country <- factor(globalPCA$country, levels = ordered_levels, ordered = TRUE)
+
+# Plot distribution of countries along PC1
+pc1_country_boxplots <- ggplot(data = globalPCA, aes_string(y = "ordered_country", x = "PC1", fill = "country")) +
+    geom_density_ridges(alpha = 0.8, size = 0.8, quantile_lines = T, quantile_fun = mean) + 
+    labs(x = paste0(' PC1 (', ve.pc1, '%)'), y = "") +
+    xlim(-limit, limit) +
+    theme_classic()  +
+    theme(legend.position = "none") +
+   theme(axis.line = element_line(size = 1, color = 'black'),
+         axis.ticks = element_line(color = 'black'),
+         axis.title = element_text(size = 14, face = 'bold', color = 'black'),
+         legend.position = "none") +
+      scale_fill_manual(values = friendly_pal("bright_seven"))  
+
+# Create a new factor, ordered by the reverse of mean PC1 - this will let us line up the country labels well on the plot
+globalPCA$ordered_country_rev <- factor(globalPCA$ordered_country, levels = rev(levels(globalPCA$ordered_country)))
+
+# Plot distribution of countries along PC2
+pc2_country_boxplots <- ggplot(data = globalPCA, aes_string(y = "ordered_country_rev", x = "PC2", fill = "country")) +
+    geom_density_ridges(alpha = 0.8, size = 0.8, quantile_lines = T, quantile_fun = mean) + 
+    labs(x = paste0(' PC2 (', ve.pc2, '%)'), y = "") +
+    xlim(-limit, limit) +
+    theme_classic()  +
+    theme(legend.position = "none") +
+   theme(axis.line = element_line(size = 1, color = 'black'),
+         axis.ticks = element_line(color = 'black'),
+         axis.title = element_text(size = 14, face = 'bold', color = 'black'),
+         legend.position = "none") +
+        scale_fill_manual(values = friendly_pal("bright_seven")) + 
+  coord_flip()
+
+pc1_country_boxplots
+pc2_country_boxplots
+```
+
+## Analyze Relationship between PCs and Plant Richness
+
+```{r}
+# Plot correlation between PC1 and plant richness
+pc1Scatter <- ggplot(data = globalPCA, aes_string(x = "PC1", y = "pMR", color = "pMR")) +
+  geom_point(size = 1, alpha = 0.5) + 
+  stat_cor(method = "spearman", color = "black") +
+  geom_smooth(method = "lm", color = "black") + 
+  xlim(-limit, limit) +
+  theme_classic() +
+  scale_color_gradient(low = "lightyellow",
+                      high = "darkgreen")+  
+  theme(axis.line = element_line(size = 1, color = 'black'),
+       axis.ticks = element_line(color = 'black'),
+       axis.title = element_text(size = 14, face = 'bold', color = 'black'),
+       legend.position = "none") +
+  labs(y = "Plant Richness")
+
+# Plot correlation between PC2 and plant richness
+pc2Scatter <- ggplot(data = globalPCA, aes_string(y = "pMR", x = "PC2", color = "pMR")) +
+  geom_point(size = 1, alpha = 0.5) + 
+  stat_cor(method = "spearman", color = "black") +
+  geom_smooth(method = "lm", color = "black") + 
+  xlim(-limit, limit) +
+  theme_classic()  +
+  scale_color_gradient(low = "lightyellow",
+                      high = "darkgreen") +
+  theme(legend.position = "none") +
+ theme(axis.line = element_line(size = 1, color = 'black'),
+       axis.ticks = element_line(color = 'black'),
+       axis.title = element_text(size = 14, face = 'bold', color = 'black'),
+       legend.position = "none") +
+  labs(y = "Plant Richness")
+pc1Scatter
+pc2Scatter
+```
+
+# Visualization
+Create figure 2 plot by combining other plots generated previously. These will be modified in Illustrator to increase readability (Changing taxa labels to common names, altering sub plot spacing with respect to one another, font sizes, etc.)
+``` {r}
+column1 <- pc2_country_boxplots + pca.biplot + plot_spacer() + pc1_country_boxplots + plot_layout(ncol = 2, heights = c(2, 0.5), widths = c(1, 2))
+column2 <- loadingsPC1 + loadingsPC2 + pc1Scatter + pc2Scatter + plot_layout(ncol = 2, heights = c(1.75, 1), widths = c(1,1))
+
+column1
+column2
+
+ggsave(file = here("Figures/Fig2a.pdf"), plot = column1, dpi = 300, width = 12, height = 8)
+ggsave(file = here("Figures/Fig2bcde.pdf"), plot = column2, dpi = 300, width = 8, height = 5.4)
+
+```
